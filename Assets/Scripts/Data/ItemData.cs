@@ -19,11 +19,47 @@ public class ItemData : ScriptableObject
 
     [Header("分类")]
     public ItemType type = ItemType.Material;
+    // ★ slot 不再手动选，从 type 自动推导：
+    //   Weapon→Weapon槽  Helmet→Helmet槽  Armor→Armor槽  Accessory→Accessory槽
+    //   其他类型（Material/Consumable）→None，不能装备
 
     [Header("装备属性（仅装备类有效）")]
-    public EquipmentSlot slot = EquipmentSlot.None;  // 装备到哪个槽位
     public string skillName = "";                    // 装备后获得什么技能
     public string skillDescription = "";             // 技能描述
+
+    /// <summary>
+    /// 从 type 自动推导装备槽位，不再需要手动选两次。
+    /// </summary>
+    public EquipmentSlot Slot
+    {
+        get
+        {
+            return type switch
+            {
+                ItemType.Weapon    => EquipmentSlot.Weapon,
+                ItemType.Helmet    => EquipmentSlot.Helmet,
+                ItemType.Armor     => EquipmentSlot.Armor,
+                ItemType.Accessory => EquipmentSlot.Accessory,
+                _                  => EquipmentSlot.None
+            };
+        }
+    }
+
+    /// <summary>
+    /// 每种物品类型对应的底色。背包染色和掉落物方块共用。
+    /// </summary>
+    public static Color GetTypeColor(ItemType type)
+    {
+        return type switch
+        {
+            ItemType.Weapon     => new Color(0.55f, 0.60f, 0.65f),
+            ItemType.Helmet     => new Color(0.45f, 0.50f, 0.60f),
+            ItemType.Armor      => new Color(0.38f, 0.42f, 0.45f),
+            ItemType.Accessory  => new Color(0.75f, 0.65f, 0.35f),
+            ItemType.Consumable => new Color(0.40f, 0.60f, 0.35f),
+            _                    => new Color(0.55f, 0.45f, 0.33f),
+        };
+    }
 }
 
 /// <summary>

@@ -27,6 +27,9 @@ public class InventoryPanel : MonoBehaviour
     [SerializeField] private float cellSize = 64f;
     [SerializeField] private float cellSpacing = 3f;
 
+    [Header("金币")]
+    [SerializeField] private UnityEngine.UI.Text goldText; // 拖你的金币 Text 到这里
+
     private CanvasGroup canvasGroup;
     private InventoryGridCell[,] cellScripts; // null 表示格子还没生成
     private bool isOpen;
@@ -102,6 +105,69 @@ public class InventoryPanel : MonoBehaviour
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
         RefreshAllItems();
+        StartCoroutine(PopInAnimation());
+    }
+
+    /// <summary>
+    /// 打开背包时，所有元素（格子、物品、装备栏）同时从各自中心弹出。
+    /// </summary>
+    private System.Collections.IEnumerator PopInAnimation()
+    {
+        float duration = 0.25f;
+
+        // 1. 网格格子
+        if (cellScripts != null)
+        {
+            int cols = cellScripts.GetLength(0);
+            int rows = cellScripts.GetLength(1);
+            for (int y = 0; y < rows; y++)
+                for (int x = 0; x < cols; x++)
+                    if (cellScripts[x, y] != null)
+                    {
+                        cellScripts[x, y].transform.localScale = Vector3.zero;
+                        StartCoroutine(ScaleUp(cellScripts[x, y].transform, duration));
+                    }
+        }
+
+        // 2. 物品
+        foreach (Transform t in itemsContainer)
+        {
+            t.localScale = Vector3.zero;
+            StartCoroutine(ScaleUp(t, duration));
+        }
+
+        // 3. 装备栏
+        EquipmentSlotUI[] equipSlots = GetComponentsInChildren<EquipmentSlotUI>();
+        foreach (var slot in equipSlots)
+        {
+            slot.transform.localScale = Vector3.zero;
+            StartCoroutine(ScaleUp(slot.transform, duration));
+        }
+
+        yield return null;
+    }
+
+    private System.Collections.IEnumerator ScaleUp(Transform t, float duration)
+    {
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            // 面板关了或物体被销毁了——立刻停止
+            if (t == null || !t.gameObject.activeInHierarchy) yield break;
+
+            elapsed += Time.deltaTime;
+            float x = Mathf.Clamp01(elapsed / duration);
+
+            // ease-out back：先冲到 ~1.1 再弹回 1，有弹簧感
+            float overshoot = 1.70158f;
+            float s = 1f + (overshoot + 1f) * (x - 1f) * (x - 1f) * (x - 1f)
+                         + overshoot * (x - 1f) * (x - 1f);
+
+            t.localScale = Vector3.one * Mathf.Clamp(s, 0f, 1.3f);
+            yield return null;
+        }
+        if (t != null)
+            t.localScale = Vector3.one;
     }
 
     public void Close()
@@ -162,6 +228,15 @@ public class InventoryPanel : MonoBehaviour
 
         foreach (var kv in inv.AllSlots())
             CreateItemUI(kv.Key, kv.Value);
+
+        // 刷新装备栏图标
+        EquipmentSlotUI[] slots = GetComponentsInChildren<EquipmentSlotUI>();
+        foreach (var s in slots)
+            s.RefreshVisual();
+
+        // 刷新金币显示
+        if (goldText != null)
+            goldText.text = $"金币：{inv.Gold}";
     }
 
     /// <summary>
@@ -198,7 +273,7 @@ public class InventoryPanel : MonoBehaviour
     // ============================================================
 
     /// <summary>
-    /// 屏幕坐标 → 格子坐标。用 cellsContainer 参考系（跟视觉格子一致）。
+    /// 屏幕坐标 → 格子坐标。用 cellsContainer 参考系，兼容任意 anchor/pivot。
     /// </summary>
     public bool ScreenToGrid(Vector2 screenPoint, out int col, out int row)
     {
@@ -209,9 +284,15 @@ public class InventoryPanel : MonoBehaviour
             rt, screenPoint, null, out Vector2 local))
             return false;
 
+        // Unity 的 local 坐标原点在 pivot。
+        // 我们要算相对左上角的偏移，无论 pivot 在哪。
+        // 左上角在 local 空间的坐标 = (-width * pivotX, height * (1 - pivotY))
+        float topLeftX = -rt.rect.width * rt.pivot.x;
+        float topLeftY =  rt.rect.height * (1f - rt.pivot.y);
+
         float step = cellSize + cellSpacing;
-        col = Mathf.FloorToInt( local.x / step);
-        row = Mathf.FloorToInt(-local.y / step);
+        col = Mathf.FloorToInt((local.x - topLeftX) / step);
+        row = Mathf.FloorToInt((topLeftY - local.y) / step);
 
         InventoryManager inv = InventoryManager.Instance;
         if (inv == null) return false;

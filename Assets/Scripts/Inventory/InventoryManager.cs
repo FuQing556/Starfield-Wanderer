@@ -12,6 +12,7 @@ public class InventoryManager : MonoBehaviour
     [Header("网格设置")]
     [SerializeField] private int gridColumns = 8;   // 列数
     [SerializeField] private int gridRows = 6;       // 行数
+    [SerializeField] private GameObject droppedItemPrefab; // 丢弃物品时在场景里生成的 prefab
 
     /// <summary>
     /// 网格数据：每个格子里存的是"属于哪个物品的 ID"
@@ -28,6 +29,11 @@ public class InventoryManager : MonoBehaviour
     // ========== 属性 ==========
     public int Columns => gridColumns;
     public int Rows => gridRows;
+
+    /// <summary>
+    /// 玩家持有的金币数量。
+    /// </summary>
+    public int Gold { get; set; } = 0;
 
     private void Awake()
     {
@@ -124,6 +130,36 @@ public class InventoryManager : MonoBehaviour
                     grid[x, y] = -1;
 
         slots.Remove(slotID);
+    }
+
+    /// <summary>
+    /// 丢弃物品到场景里——从背包移除，在玩家脚边生成可拾取的掉落物。
+    /// </summary>
+    public void DropItem(int slotID, Vector3 worldPosition)
+    {
+        InventorySlot slot = GetSlot(slotID);
+        if (slot?.itemData == null) return;
+
+        // 先从背包移除
+        RemoveItem(slotID);
+
+        // 在场景里生成掉落物
+        if (droppedItemPrefab != null)
+        {
+            // 在玩家周围随机偏移一点，避免多个物品叠在一起
+            Vector3 offset = new Vector3(
+                Random.Range(-0.5f, 0.5f),
+                Random.Range(-0.3f, 0.3f),
+                0f);
+            GameObject obj = Instantiate(droppedItemPrefab, worldPosition + offset, Quaternion.identity);
+            obj.name = $"掉落_{slot.itemData.itemName}";
+
+            // 确保有 GatherableObject——prefab 上可能没挂
+            GatherableObject g = obj.GetComponent<GatherableObject>();
+            if (g == null)
+                g = obj.AddComponent<GatherableObject>();
+            g.Initialize(slot.itemData);
+        }
     }
 
     /// <summary>
@@ -271,6 +307,71 @@ public class InventoryManager : MonoBehaviour
             }
         }
         return -1; // 背包满了
+    }
+
+    // ========== 装备系统 ==========
+
+    /// <summary>
+    /// 四个装备槽里分别装着什么物品数据。空槽位不在字典里。
+    /// </summary>
+    private Dictionary<EquipmentSlot, ItemData> equippedItems = new Dictionary<EquipmentSlot, ItemData>();
+
+    /// <summary>
+    /// 穿上装备。从背包网格中移除物品，存入装备槽。
+    /// 如果目标槽位已有装备，先把旧的卸回背包。
+    /// </summary>
+    /// <returns>true = 成功</returns>
+    public bool EquipItem(int slotID, EquipmentSlot targetSlot)
+    {
+        InventorySlot slot = GetSlot(slotID);
+        if (slot?.itemData == null) return false;
+        if (slot.itemData.Slot != targetSlot) return false; // 物品类型和槽位不匹配
+
+        // 如果槽位已有装备，先卸掉旧的
+        if (equippedItems.ContainsKey(targetSlot))
+            UnequipItem(targetSlot);
+
+        // 记录装备数据
+        equippedItems[targetSlot] = slot.itemData;
+
+        // 从背包网格移除
+        RemoveItem(slotID);
+
+        return true;
+    }
+
+    /// <summary>
+    /// 卸下装备，放回背包。背包满了返回 false。
+    /// </summary>
+    public bool UnequipItem(EquipmentSlot slotType)
+    {
+        if (!equippedItems.TryGetValue(slotType, out ItemData item))
+            return false;
+
+        // 尝试放回背包
+        int newSlotID = AddItem(item);
+        if (newSlotID < 0)
+            return false; // 背包满了，卸不下来
+
+        equippedItems.Remove(slotType);
+        return true;
+    }
+
+    /// <summary>
+    /// 查看某个装备槽里有没有东西。返回 null 表示空槽。
+    /// </summary>
+    public ItemData GetEquippedItem(EquipmentSlot slotType)
+    {
+        equippedItems.TryGetValue(slotType, out ItemData item);
+        return item;
+    }
+
+    /// <summary>
+    /// 某个装备槽是否已被占用。
+    /// </summary>
+    public bool IsEquipped(EquipmentSlot slotType)
+    {
+        return equippedItems.ContainsKey(slotType);
     }
 }
 

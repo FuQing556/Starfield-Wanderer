@@ -17,7 +17,7 @@ MonoBehaviour:
   description: "\u6062\u590D\u4E00\u5B9A\u751F\u547D\u503C\u3002"
   gridWidth: 1
   gridHeight: 2
-  type: 5
+  type: 3
   slot: 0
-  skillName: ""
-  skillDescription: ""
+  skillName: 
+  skillDescription: 

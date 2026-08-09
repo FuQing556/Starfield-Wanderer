@@ -15,14 +15,17 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private InventorySlot slot;
     private RectTransform rectTransform;
     private CanvasGroup canvasGroup;
-    private bool isRotated; // 拖拽期间的临时旋转状态
+    private Image bgImage;    // 物品自身的背景 Image
+    private bool isRotated;
     private Vector2 dragOffset;
+    private bool wasEquipped;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        bgImage = GetComponent<Image>();
     }
 
     /// <summary>
@@ -37,12 +40,35 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (iconImage != null && s.itemData.icon != null)
             iconImage.sprite = s.itemData.icon;
 
-        // 不旋转 RectTransform——CreateItemUI 已经按 slot.Width × slot.Height
-        // 设好了正确的 sizeDelta，那个尺寸本身就反映了旋转状态。
-        // 视觉旋转只在拖拽期间用（RotateWhileDragging），松手后重建，
-        // sizeDelta 已经变了，不需要额外旋转。
+        // 按物品类型染底色——有图标的半透明，没图标的更明显
+        if (bgImage != null)
+        {
+            float alpha = (s.itemData.icon != null) ? 0.35f : 0.75f;
+            Color c = ItemData.GetTypeColor(s.itemData.type);
+            c.a = alpha;
+            bgImage.color = c;
+        }
+
         rectTransform.localRotation = Quaternion.identity;
     }
+
+    /// <summary>
+    /// 本次拖拽期间被装备栏接收了。OnEndDrag 会跳过正常放置逻辑。
+    /// </summary>
+    public void MarkEquipped()
+    {
+        wasEquipped = true;
+    }
+
+    /// <summary>
+    /// 这个物品 UI 在背包里的 slotID（外部只读）
+    /// </summary>
+    public int SlotID => slotID;
+
+    /// <summary>
+    /// 这个物品的定义数据（外部只读）
+    /// </summary>
+    public ItemData ItemData => slot?.itemData;
 
     // ============================================================
     // 拖拽
@@ -95,6 +121,31 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         canvasGroup.blocksRaycasts = true;
 
         if (panel == null || inv == null) { SnapBack(panel); return; }
+
+        // ★ 拖到背包面板外 → 丢弃到场景里
+        RectTransform panelRT = panel.GetComponent<RectTransform>();
+        if (!RectTransformUtility.RectangleContainsScreenPoint(panelRT, e.position, null))
+        {
+            // 找到玩家脚底位置
+            Vector3 dropPos = Vector3.zero;
+            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+                dropPos = player.transform.position;
+
+            inv.DropItem(slotID, dropPos);
+            SnapBack(panel);
+            panel.RefreshAllItems();
+            return;
+        }
+
+        // ★ 如果本次拖拽已被装备栏接收——跳过正常放置，直接清理
+        if (wasEquipped)
+        {
+            wasEquipped = false;
+            SnapBack(panel);
+            panel.RefreshAllItems();
+            return;
+        }
 
         bool placed = false;
         if (panel.ScreenToGrid(e.position, out int col, out int row))

@@ -26,7 +26,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     }
 
     /// <summary>
-    /// 初始化。Setup 里立即画旋转视觉（之前漏了这行）。
+    /// 初始化物品显示。
     /// </summary>
     public void Setup(int id, InventorySlot s)
     {

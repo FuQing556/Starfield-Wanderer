@@ -168,7 +168,6 @@ public class InventoryLogicTest : MonoBehaviour
         // 不能移到冲突位置
         ItemData herb = MakeItem("草药", 1, 1);
         int s2 = inv.PlaceItem(herb, 5, 2);
-        bool moveToConflict = inv.MoveItem(s, 3, 2); // 跟草药冲突？不，这位置是自己不冲突
         // 试试移到草药上
         bool badMove = inv.MoveItem(s, 4, 2);
         Check(!badMove, "移到被草药占用的 (4,2) 失败");

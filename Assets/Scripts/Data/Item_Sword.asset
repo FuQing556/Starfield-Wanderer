@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b79639502d935a14b971f30ac4faae9e, type: 3}
+  m_Name: Item_Sword
+  m_EditorClassIdentifier: 
+  itemName: "\u94C1\u5251"
+  icon: {fileID: 21300000, guid: 1f013c31b28f2a1429d15f49b9513101, type: 3}
+  description: "\u4E00\u628A\u666E\u901A\u7684\u94C1\u5251\uFF0C\u653B\u51FB\u529B+5\u3002"
+  gridWidth: 2
+  gridHeight: 3
+  type: 1
+  slot: 1
+  skillName: "\u6A2A\u626B"
+  skillDescription: "\u6325\u821E\u5251\u5203\uFF0C\u653B\u51FB\u524D\u65B9\u6240\u6709\u654C\u4EBA\u3002"

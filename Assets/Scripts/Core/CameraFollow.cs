@@ -40,4 +40,13 @@ public class CameraFollow : MonoBehaviour
             Time.deltaTime * followSpeed
         );
     }
+
+    /// <summary>
+    /// 瞬间跳到目标位置。BattleManager 在传送玩家后调用，避免镜头飞半天。
+    /// </summary>
+    public void SnapToTarget()
+    {
+        if (target != null)
+            transform.position = target.position + offset;
+    }
 }

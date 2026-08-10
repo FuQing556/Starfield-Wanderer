@@ -126,7 +126,6 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         RectTransform panelRT = panel.GetComponent<RectTransform>();
         if (!RectTransformUtility.RectangleContainsScreenPoint(panelRT, e.position, null))
         {
-            // 找到玩家脚底位置
             Vector3 dropPos = Vector3.zero;
             GameObject player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)

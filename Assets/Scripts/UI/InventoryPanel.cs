@@ -35,6 +35,7 @@ public class InventoryPanel : MonoBehaviour
     private bool isOpen;
 
     public static InventoryPanel Instance { get; private set; }
+    public bool IsOpen => isOpen;
     public bool IsDragging { get; set; }
     public InventoryItemUI DraggedItem { get; set; }
 

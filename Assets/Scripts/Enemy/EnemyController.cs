@@ -219,25 +219,18 @@ public class EnemyController : MonoBehaviour
         if (!inBattle) EnterBattle(false, false);
     }
 
+    public void ResetBattleState()
+    {
+        inBattle = false;
+    }
+
     private void SpawnDouble()
     {
+        // 双倍视觉：闪现一个复制体后消失
         Vector3 spawnPos = transform.position + new Vector3(Random.Range(-1f, 1f), Random.Range(-1f, 1f), 0f);
         GameObject copy = Instantiate(gameObject, spawnPos, Quaternion.identity);
         copy.name = name + "_复制体";
-        EnemyController copyEC = copy.GetComponent<EnemyController>();
-        if (copyEC != null) copyEC.EnterBattle(false, false);
-
-        // 删最近的一只巡逻怪
-        EnemyController nearest = null;
-        float nearestDist = float.MaxValue;
-        foreach (var ec in FindObjectsOfType<EnemyController>())
-        {
-            if (ec == this || ec == copyEC) continue;
-            if (ec.currentState != State.Patrol) continue;
-            float d = Vector2.Distance(transform.position, ec.transform.position);
-            if (d < nearestDist) { nearestDist = d; nearest = ec; }
-        }
-        if (nearest != null) Destroy(nearest.gameObject);
+        Destroy(copy);
     }
 
     // ============================================================
@@ -340,14 +333,14 @@ public class EnemyController : MonoBehaviour
         if (halfHP) currentHealth = maxHealth / 2f;
         Debug.Log($"{name} 进入战斗！（HP:{currentHealth}/{maxHealth}）{(doubleBattle?" ★双倍★":"")}");
         if (doubleBattle) SpawnDouble();
-        BattleManager.Instance?.OnBattleStart(transform);
+        BattleManager.Instance?.OnBattleStart(gameObject, doubleBattle);
         currentState = State.Chase;
+        // 不再立即销毁——战斗胜利后由 BattleManager 销毁
     }
 
     private void Die()
     {
         Debug.Log($"{name} 死了");
-        BattleManager.Instance?.OnEnemyDeath();
         Destroy(gameObject);
     }
 

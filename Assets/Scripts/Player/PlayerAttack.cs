@@ -15,7 +15,6 @@ public class PlayerAttack : MonoBehaviour
 
     [Header("远程（竞技场）")]
     [SerializeField] private GameObject bulletPrefab;      // 子弹 prefab（挂 Bullet 脚本）
-    [SerializeField] private float bulletSpeed = 8f;
     [SerializeField] private float fireRate = 0.3f;        // 射击间隔（秒）
 
     private float lastFireTime;

@@ -57,18 +57,35 @@ public class Bullet : MonoBehaviour
         if (!IsInLayerMask(other.gameObject.layer, hitMask))
             return;
 
-        // 命中敌人
-        EnemyController enemy = other.GetComponent<EnemyController>();
-        if (enemy != null)
+        // 命中世界敌人
+        EnemyController worldEnemy = other.GetComponent<EnemyController>();
+        if (worldEnemy != null)
         {
-            enemy.TakeDamage(damage, transform.position);
+            worldEnemy.TakeDamage(damage, transform.position);
             Destroy(gameObject);
+            return;
         }
-        // 命中障碍物暂时直接销毁，后续弹射子弹会改这里
-        else
+
+        // 命中竞技场敌人
+        ArenaEnemy arenaEnemy = other.GetComponent<ArenaEnemy>();
+        if (arenaEnemy != null)
         {
+            arenaEnemy.TakeDamage(damage);
             Destroy(gameObject);
+            return;
         }
+
+        // 命中玩家（敌人子弹）
+        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
+        if (playerHealth != null)
+        {
+            playerHealth.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
+        // 命中障碍物暂时直接销毁
+        Destroy(gameObject);
     }
 
     private static bool IsInLayerMask(int layer, LayerMask mask)

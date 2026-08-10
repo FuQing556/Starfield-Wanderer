@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 7311759479423289121}
   - component: {fileID: 81204905338411873}
   - component: {fileID: 4709152674981717421}
-  - component: {fileID: 7134966141754023669}
+  - component: {fileID: 5570435082595351498}
   m_Layer: 3
-  m_Name: Enemy
+  m_Name: ArenaEnemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -149,7 +149,7 @@ CapsuleCollider2D:
   m_Offset: {x: 0, y: 0}
   m_Size: {x: 0.5, y: 1}
   m_Direction: 0
---- !u!114 &7134966141754023669
+--- !u!114 &5570435082595351498
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -158,29 +158,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 3013742038447661079}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 388d9e53981c1eb44a7ebdf622e28b5b, type: 3}
+  m_Script: {fileID: 11500000, guid: aabe1cd31dba9ff4c96b38e3fe35b2d4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patrolRadius: 4
-  patrolSpeed: 1.5
-  waitTimeMin: 1
-  waitTimeMax: 3
-  visionRange: 8
-  visionAngle: 120
-  obstacleMask:
-    serializedVersion: 2
-    m_Bits: 1
-  detectionTime: 3
-  detectionDrainMult: 2
-  detectionGrace: 0.3
-  chaseSpeed: 3
-  loseRange: 12
-  attackRange: 1.5
-  attackWindup: 0.4
-  attackCooldown: 1
-  attackDamage: 10
-  backstabAngle: 45
-  backstabMultiplier: 2
+  moveSpeed: 3
+  stopDistance: 3
+  bulletPrefab: {fileID: 3613253043267061281, guid: 74dc798555f9b674ca077cc3c01ca6b6, type: 3}
+  shootInterval: 1.5
+  bulletSpawnOffset: 0.8
   maxHealth: 30
-  alertRadius: 6
-  spriteRenderer: {fileID: 7311759479423289121}

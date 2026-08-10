@@ -2211,7 +2211,7 @@ SpriteRenderer:
   m_SortingLayer: 3
   m_SortingOrder: 0
   m_Sprite: {fileID: 7482667652216324306, guid: 26da26c6887c843419ce25d7e87cbf7b, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.009433985, b: 0.91715324, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -2318,7 +2318,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1287460972}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 198339336}
+        m_TargetAssemblyTypeName: InventoryPanel, Assembly-CSharp
+        m_MethodName: Close
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1287460972
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12824,12 +12836,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   testItems:
-  - {fileID: 11400000, guid: 86fe7239fcb672646bc920743636ed28, type: 2}
-  - {fileID: 11400000, guid: dab4d9aa2a83fca47a14da5869c4214e, type: 2}
-  - {fileID: 11400000, guid: 589d1be757e75454e83ed7229dacf015, type: 2}
+  - {fileID: 11400000, guid: 0695c80a1d2aca84fa0f6e137a72f0e2, type: 2}
   - {fileID: 11400000, guid: bf704d4a9407e1f4f873b3d7d4eb60d6, type: 2}
   - {fileID: 11400000, guid: dc5aceed9a61c0e4ea70b45fb03a66bc, type: 2}
-  - {fileID: 11400000, guid: 7dfd45969d5838d48aea20dce27cbfe3, type: 2}
   - {fileID: 11400000, guid: 0a22b685228db1041ba0f02a7bc0ab6d, type: 2}
   - {fileID: 11400000, guid: fd307acfd61aaf542acd4d35b502169d, type: 2}
 --- !u!1 &1799270095

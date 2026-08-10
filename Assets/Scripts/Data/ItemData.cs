@@ -48,9 +48,26 @@ public class ItemData : ScriptableObject
 
     /// <summary>
     /// 每种物品类型对应的底色。背包染色和掉落物方块共用。
+    /// 如果 Resources/ 下有 ItemTypeColors 资产，从那里读取（可在 Inspector 里调色）；
+    /// 否则用硬编码默认值。
     /// </summary>
     public static Color GetTypeColor(ItemType type)
     {
+        ItemTypeColors cfg = ItemTypeColors.Instance;
+        if (cfg != null)
+        {
+            return type switch
+            {
+                ItemType.Weapon     => cfg.weapon,
+                ItemType.Helmet     => cfg.helmet,
+                ItemType.Armor      => cfg.armor,
+                ItemType.Accessory  => cfg.accessory,
+                ItemType.Consumable => cfg.consumable,
+                _                   => cfg.material,
+            };
+        }
+
+        // 兜底默认值（没有资产时用）
         return type switch
         {
             ItemType.Weapon     => new Color(0.55f, 0.60f, 0.65f),
@@ -58,7 +75,7 @@ public class ItemData : ScriptableObject
             ItemType.Armor      => new Color(0.38f, 0.42f, 0.45f),
             ItemType.Accessory  => new Color(0.75f, 0.65f, 0.35f),
             ItemType.Consumable => new Color(0.40f, 0.60f, 0.35f),
-            _                    => new Color(0.55f, 0.45f, 0.33f),
+            _                   => new Color(0.55f, 0.45f, 0.33f),
         };
     }
 }

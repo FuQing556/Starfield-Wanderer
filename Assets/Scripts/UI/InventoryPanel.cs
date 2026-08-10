@@ -162,6 +162,23 @@ public class InventoryPanel : MonoBehaviour
     // 开关
     // ============================================================
 
+    /// <summary>
+    /// 手机背包按钮调用——开关切换。
+    /// </summary>
+    public void Toggle()
+    {
+        if (isOpen) Close(); else Open();
+    }
+
+    /// <summary>
+    /// 手机旋转按钮——旋转当前拖拽中的物品。
+    /// </summary>
+    public void MobileRotate()
+    {
+        if (IsDragging && DraggedItem != null)
+            DraggedItem.RotateWhileDragging();
+    }
+
     public void Open()
     {
         isOpen = true;

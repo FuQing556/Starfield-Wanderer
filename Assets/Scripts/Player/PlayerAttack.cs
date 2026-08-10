@@ -37,38 +37,80 @@ public class PlayerAttack : MonoBehaviour
         // CD 倒计时
         if (dashTimer > 0) dashTimer -= Time.deltaTime;
 
-        // 闪现衣：空格瞬移
+        // 闪现衣：空格瞬移（键盘 + 手机共用）
         if (HasSkill(SkillType.BlinkDodge) && Input.GetKeyDown(KeyCode.Space) && dashTimer <= 0f)
-        {
             Dash();
-        }
 
         // 背包开着时不攻击
         if (InventoryPanel.Instance != null && InventoryPanel.Instance.IsOpen)
             return;
 
-        if (!Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0))
+        {
+            if (BattleManager.Instance != null && BattleManager.Instance.IsInBattle)
+                RangedAttack(GetMouseOrJoystickDir());
+            else
+                MeleeAttack();
+        }
+    }
+
+    // ============================================================
+    // 手机按钮（绑 UI Button OnClick）
+    // ============================================================
+
+    /// <summary>
+    /// 手机攻击按钮。方向优先摇杆，没搓就取玩家面朝方向。
+    /// </summary>
+    public void OnMobileAttack()
+    {
+        if (InventoryPanel.Instance != null && InventoryPanel.Instance.IsOpen)
             return;
 
         if (BattleManager.Instance != null && BattleManager.Instance.IsInBattle)
-            RangedAttack();
+            RangedAttack(GetMobileAimDir());
         else
             MeleeAttack();
     }
 
-    private void Dash()
+    /// <summary>
+    /// 手机闪现按钮。
+    /// </summary>
+    public void OnMobileDash()
     {
-        // 方向：优先移动方向，没移动朝鼠标
-        Vector2 dir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-        if (dir.magnitude < 0.1f)
-        {
-            Vector3 mouse = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            dir = ((Vector2)mouse - (Vector2)transform.position).normalized;
-        }
-        else
-        {
-            dir.Normalize();
-        }
+        if (!HasSkill(SkillType.BlinkDodge) || dashTimer > 0f) return;
+        Dash(GetMobileAimDir());
+    }
+
+    /// <summary>
+    /// 手机攻击方向：摇杆 > 玩家面朝
+    /// </summary>
+    private Vector2 GetMobileAimDir()
+    {
+        // 摇杆在搓 → 朝反方向打（边跑边回头射）
+        Vector2 d = VirtualJoystick.Direction;
+        if (d != Vector2.zero) return -d;
+
+        // 没搓 → 最后移动方向
+        return PlayerController.LastMoveDir;
+    }
+
+    /// <summary>
+    /// 电脑端方向：鼠标位置
+    /// </summary>
+    private Vector2 GetMouseOrJoystickDir()
+    {
+        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        mouseWorld.z = 0f;
+        return (mouseWorld - transform.position).normalized;
+    }
+
+    private void Dash() { Dash(GetMouseOrJoystickDir()); }
+
+    private void Dash(Vector2 dir)
+    {
+        // 方向优先于键盘，没有就用参数（手机传摇杆方向）
+        Vector2 kbDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        if (kbDir.magnitude > 0.1f) dir = kbDir.normalized;
 
         transform.position += (Vector3)(dir * dashDistance);
         nextShotDouble = true;
@@ -122,28 +164,21 @@ public class PlayerAttack : MonoBehaviour
     // 远程（竞技场）
     // ============================================================
 
-    private void RangedAttack()
+    private void RangedAttack(Vector2 dir)
     {
         if (bulletPrefab == null) return;
 
         if (Time.time < lastFireTime + fireRate) return;
         lastFireTime = Time.time;
 
-        Vector3 mouseWorld = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mouseWorld.z = 0f;
-        Vector2 dir = (mouseWorld - transform.position).normalized;
-
-        // 装备技能可叠加
         bool scatter  = HasSkill(SkillType.ScatterShot);
         bool piercing = HasSkill(SkillType.PenetratingShot);
-        bool doubleShot = nextShotDouble; // 闪现后的强化攻击
+        bool doubleShot = nextShotDouble;
 
         if (nextShotDouble) nextShotDouble = false;
 
-        // 第一波（立刻）
         FireVolley(dir, scatter, piercing);
 
-        // 闪现双发：第二波延迟 0.08s
         if (doubleShot)
             StartCoroutine(DelayedVolley(dir, scatter, piercing));
     }

@@ -211,6 +211,21 @@ public class MerchantNPC : MonoBehaviour
         AdvanceDialogue();
     }
 
+    /// <summary>
+    /// 手机互动按钮调用。在范围内→开始对话/翻页；不在→无事。
+    /// </summary>
+    public void Interact()
+    {
+        if (!playerInRange) return;
+
+        if (shopOpened) return;   // 商店开着时不响应
+
+        if (isTalking)
+            AdvanceDialogue();
+        else
+            StartDialogue();
+    }
+
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.3f);

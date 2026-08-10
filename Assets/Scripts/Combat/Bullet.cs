@@ -17,6 +17,12 @@ public class Bullet : MonoBehaviour
     [Header("碰撞")]
     [SerializeField] private LayerMask hitMask;            // 能打中哪些层
 
+    /// <summary>
+    /// 穿透子弹——击中敌人后不销毁，继续飞。
+    /// PlayerAttack 在发射前根据装备技能设置此标志。
+    /// </summary>
+    public bool Piercing { get; set; }
+
     private Vector2 startPos;
     private Vector2 direction;
     private Rigidbody2D rb;
@@ -62,7 +68,7 @@ public class Bullet : MonoBehaviour
         if (worldEnemy != null)
         {
             worldEnemy.TakeDamage(damage, transform.position);
-            Destroy(gameObject);
+            if (!Piercing) Destroy(gameObject);
             return;
         }
 
@@ -71,7 +77,7 @@ public class Bullet : MonoBehaviour
         if (arenaEnemy != null)
         {
             arenaEnemy.TakeDamage(damage);
-            Destroy(gameObject);
+            if (!Piercing) Destroy(gameObject);
             return;
         }
 

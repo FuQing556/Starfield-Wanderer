@@ -10,13 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b79639502d935a14b971f30ac4faae9e, type: 3}
-  m_Name: "\u94C1\u7532"
+  m_Name: "\u6E90\u73E0"
   m_EditorClassIdentifier: 
-  itemName: "\u94C1\u7532"
-  icon: {fileID: 0}
+  itemName: "\u6E90\u73E0"
+  icon: {fileID: 7482667652216324306, guid: 26da26c6887c843419ce25d7e87cbf7b, type: 3}
   description: 
-  gridWidth: 2
-  gridHeight: 2
-  type: 3
-  skill: 3
+  gridWidth: 1
+  gridHeight: 1
+  type: 4
+  skill: 4
   skillDescription: 

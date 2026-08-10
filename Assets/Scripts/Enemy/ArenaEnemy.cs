@@ -22,6 +22,9 @@ public class ArenaEnemy : MonoBehaviour
     [Header("生命")]
     [SerializeField] private float maxHealth = 30f;
 
+    public float CurrentHealth => currentHealth;
+    public float MaxHealth => maxHealth;
+
     private float currentHealth;
     private float shootTimer;
     private Transform player;
@@ -114,8 +117,12 @@ public class ArenaEnemy : MonoBehaviour
     // 受伤 & 死亡
     // ============================================================
 
+    private bool isDead; // 防同一帧多次死亡
+
     public void TakeDamage(float damage)
     {
+        if (isDead) return;
+
         currentHealth -= damage;
         Debug.Log($"[ArenaEnemy] {name} 受到 {damage} 伤害，剩余 {currentHealth}");
 
@@ -125,6 +132,9 @@ public class ArenaEnemy : MonoBehaviour
 
     private void Die()
     {
+        if (isDead) return;
+        isDead = true;
+
         Debug.Log($"[ArenaEnemy] {name} 死了");
         BattleManager.Instance?.OnEnemyDeath();
         Destroy(gameObject);

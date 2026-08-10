@@ -24,11 +24,28 @@ public class PlayerHealth : MonoBehaviour
     /// </summary>
     public void TakeDamage(float damage)
     {
+        // 铁甲减伤：20%
+        if (HasEquippedSkill(SkillType.IronArmor))
+            damage *= 0.2f;
+
         currentHealth -= damage;
-        Debug.Log($"[PlayerHealth] 受到 {damage} 伤害，剩余 {currentHealth}/{maxHealth}");
+        Debug.Log($"[PlayerHealth] 受到 {damage:F1} 伤害，剩余 {currentHealth}/{maxHealth}");
 
         if (currentHealth <= 0f)
             Die();
+    }
+
+    private bool HasEquippedSkill(SkillType skill)
+    {
+        InventoryManager inv = InventoryManager.Instance;
+        if (inv == null) return false;
+        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
+        {
+            if (slot == EquipmentSlot.None) continue;
+            ItemData item = inv.GetEquippedItem(slot);
+            if (item != null && item.skill == skill) return true;
+        }
+        return false;
     }
 
     private void Die()

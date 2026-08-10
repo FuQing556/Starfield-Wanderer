@@ -30,6 +30,10 @@ public class InventoryPanel : MonoBehaviour
     [Header("金币")]
     [SerializeField] private UnityEngine.UI.Text goldText; // 拖你的金币 Text 到这里
 
+    [Header("Tooltip")]
+    [SerializeField] private UnityEngine.UI.Text tooltipText; // 悬停物品时显示名字的 Text
+    [SerializeField] private Vector2 tooltipOffset = new Vector2(-5, 5); // 跟鼠标的偏移
+
     private CanvasGroup canvasGroup;
     private InventoryGridCell[,] cellScripts; // null 表示格子还没生成
     private bool isOpen;
@@ -38,6 +42,60 @@ public class InventoryPanel : MonoBehaviour
     public bool IsOpen => isOpen;
     public bool IsDragging { get; set; }
     public InventoryItemUI DraggedItem { get; set; }
+
+    // ============================================================
+    // Tooltip
+    // ============================================================
+
+    private Canvas parentCanvas;
+    private bool tooltipVisible;
+    private Coroutine hideRoutine; // 延迟隐藏用
+
+    /// <summary>
+    /// 显示悬停提示。itemName=物品名，screenPos=鼠标屏幕坐标。
+    /// </summary>
+    public void ShowTooltip(string text, Vector2 screenPos)
+    {
+        if (tooltipText == null) return;
+
+        tooltipText.raycastTarget = false; // 不挡鼠标
+
+        // 取消正在排队的隐藏
+        if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
+
+        tooltipText.text = text;
+        tooltipText.enabled = true;
+        tooltipVisible = true;
+
+        MoveTooltip(screenPos);
+    }
+
+    public void HideTooltip()
+    {
+        // 延迟隐藏——避免鼠标在物品边缘来回触发
+        if (hideRoutine != null) StopCoroutine(hideRoutine);
+        hideRoutine = StartCoroutine(HideAfterDelay());
+    }
+
+    private System.Collections.IEnumerator HideAfterDelay()
+    {
+        yield return new WaitForSeconds(0.15f);
+        if (tooltipText != null)
+        {
+            tooltipText.enabled = false;
+            tooltipVisible = false;
+        }
+        hideRoutine = null;
+    }
+
+    private void MoveTooltip(Vector2 screenPos)
+    {
+        if (parentCanvas == null) parentCanvas = GetComponentInParent<Canvas>();
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            tooltipText.rectTransform.parent as RectTransform,
+            screenPos, parentCanvas?.worldCamera, out Vector2 local);
+        tooltipText.rectTransform.anchoredPosition = local + tooltipOffset;
+    }
 
     // ============================================================
     // 初始化
@@ -94,6 +152,10 @@ public class InventoryPanel : MonoBehaviour
 
         if (isOpen && IsDragging && Input.GetKeyDown(KeyCode.R))
             DraggedItem?.RotateWhileDragging();
+
+        // Tooltip 跟手
+        if (tooltipVisible && tooltipText != null)
+            MoveTooltip(Input.mousePosition);
     }
 
     // ============================================================

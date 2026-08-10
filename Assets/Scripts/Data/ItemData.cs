@@ -24,8 +24,9 @@ public class ItemData : ScriptableObject
     //   其他类型（Material/Consumable）→None，不能装备
 
     [Header("装备属性（仅装备类有效）")]
-    public string skillName = "";                    // 装备后获得什么技能
-    public string skillDescription = "";             // 技能描述
+    public SkillType skill = SkillType.None;          // 装备后获得什么技能
+    [TextArea(1, 2)]
+    public string skillDescription = "";             // 技能描述（Tooltip 用）
 
     /// <summary>
     /// 从 type 自动推导装备槽位，不再需要手动选两次。
@@ -60,6 +61,19 @@ public class ItemData : ScriptableObject
             _                    => new Color(0.55f, 0.45f, 0.33f),
         };
     }
+}
+
+/// <summary>
+/// 装备技能类型——装备后改变攻击方式。
+/// </summary>
+public enum SkillType
+{
+    None,              // 无技能
+    ScatterShot,       // 散射：单发变三发扇形
+    PenetratingShot,   // 穿透：子弹穿过敌人不消失
+    IronArmor,         // 铁甲：受到伤害只有 20%
+    BlinkDodge,        // 闪现衣：空格瞬移 + 下次攻击双发
+    MagnetCharm,       // 磁铁护符：自动吸取掉落物
 }
 
 /// <summary>

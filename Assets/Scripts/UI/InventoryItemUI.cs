@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 /// 需要 Image + CanvasGroup + 此脚本。
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
+public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Image iconImage;
 
@@ -163,6 +163,21 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         SnapBack(panel);
         panel.RefreshAllItems();
+    }
+
+    // ============================================================
+    // 悬停提示
+    // ============================================================
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (slot?.itemData != null)
+            InventoryPanel.Instance?.ShowTooltip(slot.itemData.itemName, eventData.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        InventoryPanel.Instance?.HideTooltip();
     }
 
     // ============================================================

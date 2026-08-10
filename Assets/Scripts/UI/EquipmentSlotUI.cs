@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 /// 挂在装备槽 GameObject 上，需要 Image 组件当背景。
 /// 槽位里放一个子物体 Icon（Image）显示装备图标。
 /// </summary>
-public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
+public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("槽位设置")]
     [SerializeField] private EquipmentSlot slotType = EquipmentSlot.Weapon; // 这个槽是什么类型
@@ -104,6 +104,40 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
             // 背包满了，卸不下来
             Debug.LogWarning($"无法卸下 {slotType} 装备：背包已满！");
         }
+    }
+
+    // ============================================================
+    // 悬停提示
+    // ============================================================
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        InventoryManager inv = InventoryManager.Instance;
+        if (inv == null) return;
+
+        ItemData equipped = inv.GetEquippedItem(slotType);
+        string text = equipped != null
+            ? $"{SlotName(slotType)}：{equipped.itemName}"
+            : $"{SlotName(slotType)}（空）";
+
+        InventoryPanel.Instance?.ShowTooltip(text, eventData.position);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        InventoryPanel.Instance?.HideTooltip();
+    }
+
+    private static string SlotName(EquipmentSlot slot)
+    {
+        return slot switch
+        {
+            EquipmentSlot.Weapon    => "武器",
+            EquipmentSlot.Helmet    => "头盔",
+            EquipmentSlot.Armor     => "胸甲",
+            EquipmentSlot.Accessory => "饰品",
+            _                       => "装备"
+        };
     }
 
     // ============================================================

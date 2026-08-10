@@ -154,6 +154,7 @@ public class BattleManager : MonoBehaviour
 
     public void OnEnemyDeath()
     {
+        if (enemiesAlive <= 0) return; // 兜底：防重复计数
         enemiesAlive--;
         WriteLog($"  💀 敌人死亡！剩余 {enemiesAlive}");
 

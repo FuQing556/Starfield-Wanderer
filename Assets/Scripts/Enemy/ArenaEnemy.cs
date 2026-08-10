@@ -22,6 +22,18 @@ public class ArenaEnemy : MonoBehaviour
     [Header("生命")]
     [SerializeField] private float maxHealth = 30f;
 
+    [Header("掉落 - 金币（加权随机）")]
+    [SerializeField] private int gold1Chance = 30;   // 掉 1 金币的概率（%）
+    [SerializeField] private int gold2Chance = 25;   // 掉 2 金币的概率（%）
+    [SerializeField] private int gold3Chance = 20;   // 掉 3 金币的概率（%）
+    [SerializeField] private int gold4Chance = 15;   // 掉 4 金币的概率（%）
+    [SerializeField] private int gold5Chance = 10;   // 掉 5 金币的概率（%）
+
+    [Header("掉落 - 物品")]
+    [SerializeField] private float dropChance = 20f;          // 每个物品掉落概率（%）
+    [SerializeField] private ItemData[] dropItems;            // 可能掉落的物品列表
+    [SerializeField] private int itemValueWhenFull = 3;       // 背包满时每个物品换多少金币
+
     public float CurrentHealth => currentHealth;
     public float MaxHealth => maxHealth;
 
@@ -136,7 +148,81 @@ public class ArenaEnemy : MonoBehaviour
         isDead = true;
 
         Debug.Log($"[ArenaEnemy] {name} 死了");
+
+        // 掉落
+        TryDropLoot();
+
         BattleManager.Instance?.OnEnemyDeath();
         Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 死亡掉落：金币加权随机 + 物品独立概率
+    /// </summary>
+    private void TryDropLoot()
+    {
+        InventoryManager inv = InventoryManager.Instance;
+        if (inv == null) return;
+
+        // ============================================================
+        // 金币：加权随机（累积权重法）
+        // 1金币 30%，2金币 25%，3金币 20%，4金币 15%，5金币 10%
+        // ============================================================
+        int gold = RollGoldWeighted();
+        if (gold > 0)
+        {
+            inv.Gold += gold;
+            Debug.Log($"[ArenaEnemy] 掉落 {gold} 金币（总计 {inv.Gold}）");
+        }
+
+        // ============================================================
+        // 物品：每个独立摇 dropChance%（默认 20%）
+        // ============================================================
+        if (dropItems != null && dropChance > 0f)
+        {
+            foreach (ItemData item in dropItems)
+            {
+                if (item == null) continue;
+
+                // 摇概率，不中就跳过
+                float roll = Random.Range(0f, 100f);
+                if (roll >= dropChance)
+                {
+                    Debug.Log($"[ArenaEnemy] {item.itemName} 未掉落（骰子 {roll:F0} >= {dropChance}）");
+                    continue;
+                }
+
+                // 中了——尝试进背包
+                int slotID = inv.AddItem(item);
+                if (slotID >= 0)
+                {
+                    Debug.Log($"[ArenaEnemy] 掉落 {item.itemName} → 背包");
+                }
+                else
+                {
+                    inv.Gold += itemValueWhenFull;
+                    Debug.Log($"[ArenaEnemy] 背包满，{item.itemName} 换成 {itemValueWhenFull} 金币");
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 加权随机金币数。累积权重：1=30%, 2=25%, 3=20%, 4=15%, 5=10%
+    /// </summary>
+    private int RollGoldWeighted()
+    {
+        float roll = Random.Range(0f, 100f); // 0~100 的随机浮点
+
+        // 按累计区间判断落在哪一档
+        float cumulative = 0f;
+        cumulative += gold1Chance; if (roll < cumulative) return 1;
+        cumulative += gold2Chance; if (roll < cumulative) return 2;
+        cumulative += gold3Chance; if (roll < cumulative) return 3;
+        cumulative += gold4Chance; if (roll < cumulative) return 4;
+        cumulative += gold5Chance; if (roll < cumulative) return 5;
+
+        // 剩余（概率和不到 100% 的情况）→ 不掉金币
+        return 0;
     }
 }

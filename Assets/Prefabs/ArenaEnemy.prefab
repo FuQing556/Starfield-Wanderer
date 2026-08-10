@@ -168,6 +168,11 @@ MonoBehaviour:
   shootInterval: 1.5
   bulletSpawnOffset: 0.8
   maxHealth: 30
+  goldMin: 0
+  goldMax: 5
+  dropItems:
+  - {fileID: 11400000, guid: bcc67cf6b2aa0f14da54e0efcacadffe, type: 2}
+  itemValueWhenFull: 3
 --- !u!1 &3673172329149267481
 GameObject:
   m_ObjectHideFlags: 0

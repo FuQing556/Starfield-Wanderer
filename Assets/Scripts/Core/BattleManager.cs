@@ -20,10 +20,14 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private float waveInterval = 12f;      // 每波间隔（秒）
     [SerializeField] private int maxWaves = 3;              // 总共几波
 
+    [Header("复活")]
+    [SerializeField] private Transform respawnPoint;        // 复活点（不设就用玩家初始位置）
+
     public bool IsInBattle => inBattle;
 
     private CameraFollow cameraFollow;
-    private Vector3 playerReturnPos;
+    private Vector3 battleEntryPos;  // 战斗入口坐标（物品丢这里）
+    private Vector3 spawnPos;        // 复活坐标
     private bool inBattle;
     private int enemiesAlive;
 
@@ -55,6 +59,13 @@ public class BattleManager : MonoBehaviour
     {
         Camera cam = Camera.main;
         if (cam != null) cameraFollow = cam.GetComponent<CameraFollow>();
+
+        // 记录复活点：Inspector 拖了就用拖的，没拖就用玩家初始位置
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (respawnPoint != null)
+            spawnPos = respawnPoint.position;
+        else if (player != null)
+            spawnPos = player.transform.position;
     }
 
     private void Update()
@@ -93,7 +104,7 @@ public class BattleManager : MonoBehaviour
 
         if (!inBattle)
         {
-            playerReturnPos = player.transform.position;
+            battleEntryPos = player.transform.position;
             inBattle = true;
 
             triggeringEnemy = enemy;
@@ -210,6 +221,9 @@ public class BattleManager : MonoBehaviour
             if (ph != null) ph.ResetHealth();
         }
 
+        // 死亡掉落：背包物品全丢在战斗入口处，装备和金币保留
+        InventoryManager.Instance?.DropAllItems(battleEntryPos);
+
         Cleanup();
     }
 
@@ -229,9 +243,9 @@ public class BattleManager : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
-            player.transform.position = playerReturnPos;
+            player.transform.position = spawnPos;
             if (cameraFollow != null) cameraFollow.SnapToTarget();
-            WriteLog($"  玩家回到 {playerReturnPos}");
+            WriteLog($"  玩家回到复活点 {spawnPos}");
         }
     }
 

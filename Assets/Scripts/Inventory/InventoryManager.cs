@@ -133,7 +133,19 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 丢弃物品到场景里——从背包移除，在玩家脚边生成可拾取的掉落物。
+    /// 死亡惩罚：把背包里所有物品丢到指定世界坐标。
+    /// 装备不受影响。
+    /// </summary>
+    public void DropAllItems(Vector3 worldPosition)
+    {
+        // 先收集所有 slotID（遍历中不能改字典）
+        var ids = new List<int>(slots.Keys);
+        foreach (int id in ids)
+            DropItem(id, worldPosition);
+    }
+
+    /// <summary>
+    /// 丢弃物品到场景里——从背包移除，在指定位置生成可拾取的掉落物。
     /// </summary>
     public void DropItem(int slotID, Vector3 worldPosition)
     {
@@ -373,6 +385,48 @@ public class InventoryManager : MonoBehaviour
     {
         return equippedItems.ContainsKey(slotType);
     }
+
+    // ========== 商店/交易辅助 ==========
+
+    /// <summary>
+    /// 数背包里有多少个指定物品。每个格子算 1 个。
+    /// </summary>
+    public int CountItem(ItemData item)
+    {
+        int count = 0;
+        foreach (var kv in slots)
+        {
+            if (kv.Value.itemData == item)
+                count++;
+        }
+        return count;
+    }
+
+    /// <summary>
+    /// 从背包扣除指定数量的物品。不够返回 false，不扣任何东西。
+    /// </summary>
+    public bool RemoveItemByData(ItemData item, int count)
+    {
+        if (CountItem(item) < count)
+            return false; // 数量不够
+
+        // 收集匹配的 slotID
+        var toRemove = new List<int>();
+        foreach (var kv in slots)
+        {
+            if (kv.Value.itemData == item)
+            {
+                toRemove.Add(kv.Key);
+                if (toRemove.Count >= count) break;
+            }
+        }
+
+        // 全部收集齐了才删
+        foreach (int id in toRemove)
+            RemoveItem(id);
+
+        return true;
+    }
 }
 
 /// <summary>
@@ -388,4 +442,21 @@ public class InventorySlot
 
     public int Width => rotated ? itemData.gridHeight : itemData.gridWidth;
     public int Height => rotated ? itemData.gridWidth : itemData.gridHeight;
+}
+
+/// <summary>
+/// 商店的一条交易条目。
+/// costItem = null 表示消耗金币，costAmount 从背包金币扣。
+/// </summary>
+[System.Serializable]
+public class ShopSlot
+{
+    [Tooltip("玩家要付的物品（留空 = 用金币付）")]
+    public ItemData costItem;     // null = 金币
+
+    [Tooltip("要付多少个（1 金币就是填 1）")]
+    public int costAmount = 1;
+
+    [Tooltip("玩家拿到什么")]
+    public ItemData rewardItem;
 }

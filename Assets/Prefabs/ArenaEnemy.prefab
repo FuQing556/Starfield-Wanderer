@@ -187,7 +187,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPointOverride: {fileID: 0}
-  spriteRenderer: {fileID: 7311759479423289121}
+  data: {fileID: 11400000, guid: a744306843681354f8d5610fa00408f3, type: 2}
   OnDied:
     m_PersistentCalls:
       m_Calls: []

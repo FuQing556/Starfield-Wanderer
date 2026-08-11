@@ -13,6 +13,9 @@ public class EnemyBase : MonoBehaviour, IDamageable
     [Header("出生点")]
     [SerializeField] private Transform spawnPointOverride; // 不设就用初始位置
 
+    [Header("数据模板")]
+    [SerializeField] private EnemyData data; // 拖入后，所有组件自动读这里的数值
+
     /// <summary>当前状态。</summary>
     public EnemyState State { get; set; } = EnemyState.Idle;
 
@@ -234,9 +237,22 @@ public class EnemyBase : MonoBehaviour, IDamageable
         else if (moveX < -0.05f) spriteRenderer.flipX = true;
     }
 
+    /// <summary>攻击者是否在我的背后（背刺判定）。MeleeAttack 和 VisionComponent 共用。</summary>
+    public bool IsBehind(Vector2 attackerPos, float angle = 60f)
+    {
+        Vector2 forward = (spriteRenderer != null && spriteRenderer.flipX)
+            ? Vector2.left : Vector2.right;
+        Vector2 back = -forward;
+        Vector2 toAttacker = (attackerPos - (Vector2)transform.position).normalized;
+        return Vector2.Angle(back, toAttacker) <= angle;
+    }
+
     // ============================================================
     // 公开属性
     // ============================================================
+
+    /// <summary>数据模板（null = 用各组件自己的默认值）。</summary>
+    public EnemyData Data => data;
 
     public Vector2 SpawnPoint => spawnPoint;
     public Transform Player => player;

@@ -187,6 +187,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPointOverride: {fileID: 0}
+  data: {fileID: 11400000, guid: a744306843681354f8d5610fa00408f3, type: 2}
   OnDied:
     m_PersistentCalls:
       m_Calls: []

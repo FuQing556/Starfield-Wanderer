@@ -17,6 +17,13 @@ public class ChaseMovement : MonoBehaviour, IMovementBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        EnemyBase eb = GetComponent<EnemyBase>();
+        if (eb != null && eb.Data != null)
+        {
+            speed        = eb.Data.chaseSpeed;
+            stopDistance = eb.Data.loseRange * 0.6f; // 停止距离 = 丢失范围的60%
+        }
     }
 
     private void Start()

@@ -21,6 +21,17 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
     private void Awake()
     {
         health = GetComponent<HealthComponent>();
+
+        EnemyBase eb = GetComponent<EnemyBase>();
+        if (eb != null && eb.Data != null)
+        {
+            range              = eb.Data.attackRange;
+            windup             = eb.Data.attackWindup;
+            cooldown           = eb.Data.attackCooldown;
+            damage             = eb.Data.attackDamage;
+            backstabAngle      = eb.Data.backstabAngle;
+            backstabMultiplier = eb.Data.backstabMultiplier;
+        }
     }
 
     public bool IsInRange(EnemyBase enemy, Transform target)
@@ -73,17 +84,7 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
 
     private bool IsBehind(Vector2 attackerPos)
     {
-        Vector2 myForward = enemySpriteRenderer != null && enemySpriteRenderer.flipX
-            ? Vector2.left : Vector2.right;
-        Vector2 myBack = -myForward;
-        Vector2 toAttacker = (attackerPos - (Vector2)transform.position).normalized;
-        return Vector2.Angle(myBack, toAttacker) <= backstabAngle;
-    }
-
-    private SpriteRenderer enemySpriteRenderer;
-
-    private void Start()
-    {
-        enemySpriteRenderer = GetComponent<SpriteRenderer>();
+        EnemyBase eb = GetComponent<EnemyBase>();
+        return eb != null && eb.IsBehind(attackerPos, backstabAngle);
     }
 }

@@ -26,7 +26,7 @@ public class GameInitializer : MonoBehaviour
         TryEquip(starterArmor);
         TryEquip(starterAccessory);
 
-        InventoryPanel.Instance?.RefreshAllItems();
+        InventoryPanel.MainPanel?.RefreshAllItems();
         Debug.Log("[GameInitializer] 开局装备已发放");
     }
 

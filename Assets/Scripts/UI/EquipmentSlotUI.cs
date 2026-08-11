@@ -97,7 +97,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
         {
             RefreshVisual();
             // 刷新背包面板——物品又出现在格子里了
-            InventoryPanel.Instance?.RefreshAllItems();
+            InventoryPanel.MainPanel?.RefreshAllItems();
         }
         else
         {
@@ -120,12 +120,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
             ? $"{SlotName(slotType)}：{equipped.itemName}"
             : $"{SlotName(slotType)}（空）";
 
-        InventoryPanel.Instance?.ShowTooltip(text, eventData.position);
+        InventoryPanel.MainPanel?.ShowTooltip(text, eventData.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        InventoryPanel.Instance?.HideTooltip();
+        InventoryPanel.MainPanel?.HideTooltip();
     }
 
     private static string SlotName(EquipmentSlot slot)

@@ -8,7 +8,7 @@ using UnityEngine.UI;
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 [RequireComponent(typeof(Rigidbody2D))]
-public class NPCBrain : MonoBehaviour
+public class NPCBrain : MonoBehaviour, IInteractable
 {
     [Header("数据")]
     [SerializeField] private NPCData data;
@@ -21,6 +21,9 @@ public class NPCBrain : MonoBehaviour
 
     private Transform player;
     private bool playerInRange;
+    public string Prompt => "按 F 对话";
+    public bool IsInRange => playerInRange;
+
     private bool isTalking;
     private bool shopOpened;
     private int dialogueIndex;
@@ -49,21 +52,8 @@ public class NPCBrain : MonoBehaviour
         bool wasInRange = playerInRange;
         playerInRange = dist <= data.interactRange;
 
-        if (playerInRange && !wasInRange)
-            GameHUD.Instance?.ShowPrompt($"按 F 对话");
-        else if (!playerInRange && wasInRange)
+        if (!playerInRange && wasInRange)
             CloseAll();
-
-        if (isTalking && Input.GetKeyDown(KeyCode.F))
-        {
-            AdvanceDialogue();
-            return;
-        }
-
-        if (!playerInRange || shopOpened) return;
-
-        if (Input.GetKeyDown(KeyCode.F))
-            StartDialogue();
     }
 
     // ============================================================
@@ -139,7 +129,6 @@ public class NPCBrain : MonoBehaviour
         dialogueIndex = 0;
         if (dialoguePanel != null) dialoguePanel.SetActive(false);
         if (shopPanel     != null) shopPanel.SetActive(false);
-        GameHUD.Instance?.ShowPrompt(null);
     }
 
     // ============================================================

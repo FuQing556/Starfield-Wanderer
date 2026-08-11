@@ -17,6 +17,14 @@ public class RangedAttack : MonoBehaviour, IAttackBehaviour
     private void Awake()
     {
         initJitter = Random.Range(0.5f, 1.5f);
+
+        EnemyBase eb = GetComponent<EnemyBase>();
+        if (eb != null && eb.Data != null)
+        {
+            range             = eb.Data.attackRange * 2f; // 远程射程 = 近战的2倍
+            interval          = eb.Data.shootInterval;
+            bulletSpawnOffset = eb.Data.bulletSpawnOffset;
+        }
     }
 
     public bool IsInRange(EnemyBase enemy, Transform target)

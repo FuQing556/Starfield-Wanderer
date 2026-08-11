@@ -21,6 +21,11 @@ public class HealthComponent : MonoBehaviour
 
     private void Awake()
     {
+        // Data 覆盖：有模板就用模板的数值
+        EnemyBase eb = GetComponent<EnemyBase>();
+        if (eb != null && eb.Data != null)
+            maxHealth = eb.Data.maxHealth;
+
         CurrentHealth = maxHealth;
     }
 

@@ -98,6 +98,7 @@
     <Compile Include="Assets\Scripts\UI\MobileInteract.cs" />
     <Compile Include="Assets\Scripts\Combat\Bullet.cs" />
     <Compile Include="Assets\Scripts\Enemy\Movement\PatrolMovement.cs" />
+    <Compile Include="Assets\Scripts\Data\ShopSlot.cs" />
     <Compile Include="Assets\Scripts\UI\GameHUD.cs" />
     <Compile Include="Assets\Scripts\World\WorldSpawner.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyHealthBar.cs" />
@@ -126,7 +127,9 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ShaderPropAnimator.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\Combat\IDamageable.cs" />
+    <Compile Include="Assets\Scripts\World\IInteractable.cs" />
     <Compile Include="Assets\Scripts\Enemy\VisionComponent.cs" />
+    <Compile Include="Assets\Scripts\Player\PlayerInteract.cs" />
     <Compile Include="Assets\Scripts\Core\BattleManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyBase.cs" />

@@ -23,6 +23,15 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        EnemyBase eb = GetComponent<EnemyBase>();
+        if (eb != null && eb.Data != null)
+        {
+            speed   = eb.Data.moveSpeed;
+            radius  = eb.Data.patrolRadius;
+            waitMin = eb.Data.waitTimeMin;
+            waitMax = eb.Data.waitTimeMax;
+        }
     }
 
     /// <summary>第一次 Tick 时才记录 spawnPoint，确保场景加载完毕。</summary>

@@ -5,12 +5,20 @@ using UnityEngine;
 /// 玩家靠近 → HUD 显示提示 → 按 F 采集进背包。
 /// 需要 Trigger Collider2D。
 /// </summary>
-public class GatherableObject : MonoBehaviour
+public class GatherableObject : MonoBehaviour, IInteractable
 {
     [Header("采集物")]
     [SerializeField] private ItemData itemData;
 
     private bool playerInRange;
+
+    public string Prompt => itemData != null ? $"按 F 采集 {itemData.itemName}" : "按 F 采集";
+    public bool IsInRange => playerInRange;
+
+    public void Interact()
+    {
+        TryGather();
+    }
 
     private SpriteRenderer spriteRenderer;
 
@@ -47,12 +55,6 @@ public class GatherableObject : MonoBehaviour
         return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
     }
 
-    private void Update()
-    {
-        if (playerInRange && Input.GetKeyDown(KeyCode.F))
-            TryGather();
-    }
-
     private void TryGather()
     {
         if (itemData == null) return;
@@ -63,7 +65,7 @@ public class GatherableObject : MonoBehaviour
         int slotID = inv.AddItem(itemData);
         if (slotID >= 0)
         {
-            InventoryPanel.Instance?.RefreshAllItems();
+            InventoryPanel.MainPanel?.RefreshAllItems();
             GameHUD.Instance?.ShowPrompt(null); // 隐藏提示
             Destroy(gameObject);
         }
@@ -76,26 +78,12 @@ public class GatherableObject : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
-        {
             playerInRange = true;
-            if (itemData != null)
-                GameHUD.Instance?.ShowPrompt($"按 F 采集 {itemData.itemName}");
-        }
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
         if (other.CompareTag("Player"))
-        {
             playerInRange = false;
-            GameHUD.Instance?.ShowPrompt(null);
-        }
-    }
-
-    private void OnDestroy()
-    {
-        // 物体被销毁时（被采集/场景切换），清理提示
-        if (playerInRange)
-            GameHUD.Instance?.ShowPrompt(null);
     }
 }

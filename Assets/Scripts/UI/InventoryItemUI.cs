@@ -77,7 +77,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnBeginDrag(PointerEventData e)
     {
-        InventoryPanel panel = InventoryPanel.Instance;
+        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
         if (panel == null) return;
 
         panel.IsDragging = true;
@@ -96,7 +96,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         transform.position = e.position + dragOffset;
 
-        InventoryPanel panel = InventoryPanel.Instance;
+        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
         InventoryManager inv = InventoryManager.Instance;
         if (panel == null || inv == null) return;
 
@@ -117,7 +117,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     public void OnEndDrag(PointerEventData e)
     {
-        InventoryPanel panel = InventoryPanel.Instance;
+        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
         InventoryManager inv = InventoryManager.Instance;
         canvasGroup.blocksRaycasts = true;
 
@@ -173,12 +173,12 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (slot?.itemData != null)
-            InventoryPanel.Instance?.ShowTooltip(slot.itemData.itemName, eventData.position);
+            GetComponentInParent<InventoryPanel>()?.ShowTooltip(slot.itemData.itemName, eventData.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        InventoryPanel.Instance?.HideTooltip();
+        GetComponentInParent<InventoryPanel>()?.HideTooltip();
     }
 
     // ============================================================
@@ -212,7 +212,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         InventoryManager.Instance?.RemoveItem(slotID);
 
         // 刷新面板
-        InventoryPanel.Instance?.RefreshAllItems();
+        GetComponentInParent<InventoryPanel>()?.RefreshAllItems();
 
         Debug.Log($"[InventoryItemUI] 使用消耗品：{slot.itemData.itemName}，回复 {slot.itemData.healAmount} 血");
     }

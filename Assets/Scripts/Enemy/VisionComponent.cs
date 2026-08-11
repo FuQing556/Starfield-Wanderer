@@ -44,6 +44,17 @@ public class VisionComponent : MonoBehaviour
         enemy = GetComponent<EnemyBase>();
         health = GetComponent<HealthComponent>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        if (enemy != null && enemy.Data != null)
+        {
+            range          = enemy.Data.visionRange;
+            angle          = enemy.Data.visionAngle;
+            detectionTime  = enemy.Data.detectionTime;
+            drainMult      = enemy.Data.detectionDrainMult;
+            grace          = enemy.Data.detectionGrace;
+            alertRadius    = enemy.Data.alertRadius;
+            backstabAngle  = enemy.Data.backstabAngle;
+        }
     }
 
     private void Start()
@@ -185,11 +196,7 @@ public class VisionComponent : MonoBehaviour
 
     private bool IsBehind(Vector2 attackerPos)
     {
-        Vector2 myForward = (spriteRenderer != null && spriteRenderer.flipX)
-            ? Vector2.left : Vector2.right;
-        Vector2 myBack = -myForward;
-        Vector2 toAttacker = (attackerPos - (Vector2)transform.position).normalized;
-        return Vector2.Angle(myBack, toAttacker) <= backstabAngle;
+        return enemy != null && enemy.IsBehind(attackerPos, backstabAngle);
     }
 
     // ============================================================

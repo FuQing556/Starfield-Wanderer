@@ -3759,6 +3759,7 @@ GameObject:
   - component: {fileID: 1637162497}
   - component: {fileID: 1637162498}
   - component: {fileID: 1637162499}
+  - component: {fileID: 1637162500}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -3958,6 +3959,19 @@ MonoBehaviour:
   starterHelmet: {fileID: 11400000, guid: bf704d4a9407e1f4f873b3d7d4eb60d6, type: 2}
   starterArmor: {fileID: 11400000, guid: dc5aceed9a61c0e4ea70b45fb03a66bc, type: 2}
   starterAccessory: {fileID: 11400000, guid: fd307acfd61aaf542acd4d35b502169d, type: 2}
+--- !u!114 &1637162500
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1637162491}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41d73fbaa9644384e881a591e1f9b8da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxRange: 3
 --- !u!1 &1685383232
 GameObject:
   m_ObjectHideFlags: 0

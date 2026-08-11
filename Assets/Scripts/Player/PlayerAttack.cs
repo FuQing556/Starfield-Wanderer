@@ -42,7 +42,7 @@ public class PlayerAttack : MonoBehaviour
             Dash();
 
         // 背包开着时不攻击
-        if (InventoryPanel.Instance != null && InventoryPanel.Instance.IsOpen)
+        if (InventoryPanel.MainPanel != null && InventoryPanel.MainPanel.IsOpen)
             return;
 
         if (Input.GetMouseButtonDown(0))
@@ -63,7 +63,7 @@ public class PlayerAttack : MonoBehaviour
     /// </summary>
     public void OnMobileAttack()
     {
-        if (InventoryPanel.Instance != null && InventoryPanel.Instance.IsOpen)
+        if (InventoryPanel.MainPanel != null && InventoryPanel.MainPanel.IsOpen)
             return;
 
         if (BattleManager.Instance != null && BattleManager.Instance.IsInBattle)

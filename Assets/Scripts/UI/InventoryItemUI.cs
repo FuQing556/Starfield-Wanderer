@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 /// 需要 Image + CanvasGroup + 此脚本。
 /// </summary>
 [RequireComponent(typeof(Image))]
-public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler
+public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     [SerializeField] private Image iconImage;
 
@@ -19,6 +19,7 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private bool isRotated;
     private Vector2 dragOffset;
     private bool wasEquipped;
+    private float lastClickTime; // 双击检测
 
     private void Awake()
     {
@@ -178,6 +179,42 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     public void OnPointerExit(PointerEventData eventData)
     {
         InventoryPanel.Instance?.HideTooltip();
+    }
+
+    // ============================================================
+    // 双击使用（消耗品）
+    // ============================================================
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        // 双击检测：两次点击间隔 < 0.35 秒
+        if (Time.time - lastClickTime < 0.35f)
+            TryUseConsumable();
+
+        lastClickTime = Time.time;
+    }
+
+    private void TryUseConsumable()
+    {
+        if (slot?.itemData == null) return;
+        if (slot.itemData.type != ItemType.Consumable) return;
+
+        // 回血
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            PlayerHealth ph = player.GetComponent<PlayerHealth>();
+            if (ph != null)
+                ph.Heal(slot.itemData.healAmount);
+        }
+
+        // 从背包移除
+        InventoryManager.Instance?.RemoveItem(slotID);
+
+        // 刷新面板
+        InventoryPanel.Instance?.RefreshAllItems();
+
+        Debug.Log($"[InventoryItemUI] 使用消耗品：{slot.itemData.itemName}，回复 {slot.itemData.healAmount} 血");
     }
 
     // ============================================================

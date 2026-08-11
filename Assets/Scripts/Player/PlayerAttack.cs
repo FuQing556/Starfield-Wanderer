@@ -127,7 +127,7 @@ public class PlayerAttack : MonoBehaviour
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayer);
 
-        EnemyController closestEnemy = null;
+        EnemyBase closestEnemy = null;
         Harvestable closestHarvest = null;
         float closestEnemyDist = float.MaxValue;
         float closestHarvestDist = float.MaxValue;
@@ -136,15 +136,13 @@ public class PlayerAttack : MonoBehaviour
         {
             float dist = Vector2.Distance(transform.position, hit.transform.position);
 
-            // 查敌人
-            EnemyController enemy = hit.GetComponent<EnemyController>();
+            EnemyBase enemy = hit.GetComponent<EnemyBase>();
             if (enemy != null && dist < closestEnemyDist)
             {
                 closestEnemyDist = dist;
                 closestEnemy = enemy;
             }
 
-            // 查采集物
             Harvestable harvest = hit.GetComponent<Harvestable>();
             if (harvest != null && dist < closestHarvestDist)
             {
@@ -153,7 +151,6 @@ public class PlayerAttack : MonoBehaviour
             }
         }
 
-        // 优先打最近的敌人；没敌人再打采集物
         if (closestEnemy != null)
             closestEnemy.TakeDamage(baseDamage, transform.position);
         else if (closestHarvest != null)
@@ -203,22 +200,10 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 检查四个装备槽中是否有指定技能。SkillBarUI 也读这个。
-    /// </summary>
     public bool HasSkill(SkillType skill)
     {
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return false;
-
-        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
-        {
-            if (slot == EquipmentSlot.None) continue;
-            ItemData item = inv.GetEquippedItem(slot);
-            if (item != null && item.skill == skill)
-                return true;
-        }
-        return false;
+        return EquipmentManager.Instance != null
+            && EquipmentManager.Instance.HasSkill(skill);
     }
 
     /// <summary>

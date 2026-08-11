@@ -4,7 +4,7 @@ using UnityEngine;
 /// 可攻击的采集物——树、矿石等。玩家近战攻击砍它，血归零后掉落材料。
 /// 挂在树/矿 Prefab 上，需要 Collider2D。
 /// </summary>
-public class Harvestable : MonoBehaviour
+public class Harvestable : MonoBehaviour, IDamageable
 {
     [Header("生命")]
     [SerializeField] private float maxHealth = 50f;

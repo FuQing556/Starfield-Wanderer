@@ -12,14 +12,14 @@ GameObject:
   - component: {fileID: 7311759479423289121}
   - component: {fileID: 81204905338411873}
   - component: {fileID: 4709152674981717421}
-  - component: {fileID: 1340239600131989753}
-  - component: {fileID: 7380089307099260412}
-  - component: {fileID: 5657279770248590122}
-  - component: {fileID: 5753370988965485397}
-  - component: {fileID: 4822259646676805801}
-  - component: {fileID: 1124315001175511633}
+  - component: {fileID: 5985799571581324076}
+  - component: {fileID: 1887963466396159260}
+  - component: {fileID: 5811035332989886828}
+  - component: {fileID: 7115546102673291619}
+  - component: {fileID: 4197863637417375188}
+  - component: {fileID: 3028960355743410540}
   m_Layer: 3
-  m_Name: ArenaEnemy
+  m_Name: WorldEnemy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,7 +38,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4204684156901002}
+  - {fileID: 4971925723330242650}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &7311759479423289121
@@ -155,7 +155,7 @@ CapsuleCollider2D:
   m_Offset: {x: 0, y: 0}
   m_Size: {x: 0.5, y: 1}
   m_Direction: 0
---- !u!114 &1340239600131989753
+--- !u!114 &5985799571581324076
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -174,7 +174,7 @@ MonoBehaviour:
   OnDamaged:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &7380089307099260412
+--- !u!114 &1887963466396159260
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -187,11 +187,26 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spawnPointOverride: {fileID: 0}
-  spriteRenderer: {fileID: 7311759479423289121}
   OnDied:
     m_PersistentCalls:
       m_Calls: []
---- !u!114 &5657279770248590122
+--- !u!114 &5811035332989886828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3013742038447661079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9da63d9be4135af4196d111242e7c52b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  speed: 1.5
+  radius: 4
+  waitMin: 2
+  waitMax: 5
+--- !u!114 &7115546102673291619
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -205,7 +220,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 3
   stopDistance: 3
---- !u!114 &5753370988965485397
+--- !u!114 &4197863637417375188
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -214,14 +229,20 @@ MonoBehaviour:
   m_GameObject: {fileID: 3013742038447661079}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: edc325407280c8d42abfe6764c6a8d31, type: 3}
+  m_Script: {fileID: 11500000, guid: db0ca16501dc2c44794fd2121a2efd53, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  range: 8
-  interval: 1.5
-  bulletSpawnOffset: 0.8
-  bulletPrefab: {fileID: 3613253043267061281, guid: 74dc798555f9b674ca077cc3c01ca6b6, type: 3}
---- !u!114 &4822259646676805801
+  range: 3.5
+  angle: 100
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  detectionTime: 3
+  drainMult: 2
+  grace: 0.3
+  alertRadius: 6
+  backstabAngle: 60
+--- !u!114 &3028960355743410540
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -230,31 +251,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 3013742038447661079}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0172070e80b99424cacd751c09b4a9d8, type: 3}
+  m_Script: {fileID: 11500000, guid: 0cc7507ee17b8734a90ddd2e054dc605, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gold1Chance: 30
-  gold2Chance: 25
-  gold3Chance: 20
-  gold4Chance: 15
-  gold5Chance: 10
-  dropChance: 20
-  dropItems:
-  - {fileID: 11400000, guid: bcc67cf6b2aa0f14da54e0efcacadffe, type: 2}
-  itemValueWhenFull: 5
---- !u!114 &1124315001175511633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3013742038447661079}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d1ffef5ed5bf80349a49cd44df881efa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!1 &3673172329149267481
+  range: 1.5
+  windup: 0.4
+  cooldown: 1.5
+  damage: 10
+  backstabAngle: 60
+  backstabMultiplier: 2
+--- !u!1 &5789022929268260451
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -262,40 +268,40 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4204684156901002}
-  - component: {fileID: 8990836692856314441}
+  - component: {fileID: 4971925723330242650}
+  - component: {fileID: 257091735007106632}
   m_Layer: 0
-  m_Name: HealthBar
+  m_Name: DetectionBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4204684156901002
+--- !u!4 &4971925723330242650
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3673172329149267481}
+  m_GameObject: {fileID: 5789022929268260451}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5256812680016513577}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8990836692856314441
+--- !u!114 &257091735007106632
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3673172329149267481}
+  m_GameObject: {fileID: 5789022929268260451}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5398bece73521774ba5600b874f05a19, type: 3}
+  m_Script: {fileID: 11500000, guid: 5655bd6cb0d25c74684911e3f1716f86, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   barSprite: {fileID: 21300000, guid: 0885d29f20c34811a68bba64a1c2e7da, type: 3}
@@ -304,5 +310,5 @@ MonoBehaviour:
   yOffset: 0.7
   sortingLayer: UI
   sortingOrder: 4
-  barColor: {r: 1, g: 0, b: 0, a: 1}
-  bgColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.5}
+  fillColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  bgColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.3}

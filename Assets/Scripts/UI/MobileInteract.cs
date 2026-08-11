@@ -14,12 +14,10 @@ public class MobileInteract : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null) return;
 
-        // 1. 先找 MerchantNPC——距离在 interactRange 内就对话/翻页
-        MerchantNPC[] npcs = FindObjectsOfType<MerchantNPC>();
+        NPCBrain[] npcs = FindObjectsOfType<NPCBrain>();
         foreach (var npc in npcs)
         {
             float dist = Vector2.Distance(player.transform.position, npc.transform.position);
-            // MerchantNPC 内部的 interactRange 是私有的，这里用 3f 做近似兜底
             if (dist <= 3f)
             {
                 npc.Interact();

@@ -37,10 +37,8 @@ public class BattleManager : MonoBehaviour
     private float waveTimer;                 // 下一波倒计时
     private bool allWavesSpawned;            // 所有波次已出完
 
-    // 世界敌人引用
+    // 世界敌人引用（仅用于战败时不销毁）
     private GameObject triggeringEnemy;
-    private bool wasDoubleBattle;
-    private GameObject extraWorldEnemy;
 
     // 诊断日志
     private static string logPath;
@@ -95,9 +93,14 @@ public class BattleManager : MonoBehaviour
     // 进入战斗
     // ============================================================
 
-    public void OnBattleStart(GameObject enemy, bool doubleBattle)
+    /// <summary>
+    /// 进入战斗。alertedCount = 被呼唤的同伴数量。
+    /// 每波怪物数量 × (1 + alertedCount)。即 0 = 正常，3 = 四倍。
+    /// </summary>
+    public void OnBattleStart(GameObject enemy, int alertedCount)
     {
-        WriteLog($"OnBattleStart(enemy={enemy?.name} doubleBattle={doubleBattle})");
+        int multiplier = 1 + alertedCount;
+        WriteLog($"OnBattleStart(enemy={enemy?.name} alerted={alertedCount} multiplier=×{multiplier})");
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null || arenaCenter == null) return;
@@ -108,14 +111,8 @@ public class BattleManager : MonoBehaviour
             inBattle = true;
 
             triggeringEnemy = enemy;
-            wasDoubleBattle = doubleBattle;
-            enemiesThisWave = doubleBattle ? enemiesPerWave * 2 : enemiesPerWave;
-
-            if (doubleBattle)
-            {
-                extraWorldEnemy = FindNearestPatrol(enemy);
-                WriteLog($"  双倍额外目标: {(extraWorldEnemy != null ? extraWorldEnemy.name : "NULL")}");
-            }
+            enemiesThisWave = enemiesPerWave * multiplier;
+            WriteLog($"  倍率 ×{multiplier}");
 
             // 第一波立刻出
             waveCount = 0;
@@ -181,20 +178,20 @@ public class BattleManager : MonoBehaviour
     {
         WriteLog($"  🏁 胜利！");
 
-        if (triggeringEnemy != null)
+        // 销毁所有进战的世界怪（触发者 + 被呼唤的同伴）
+        int destroyed = 0;
+        foreach (var eb in FindObjectsOfType<EnemyBase>())
         {
-            WriteLog($"  销毁世界敌人: {triggeringEnemy.name}");
-            Destroy(triggeringEnemy);
-            triggeringEnemy = null;
+            VisionComponent vc = eb.GetComponent<VisionComponent>();
+            if (vc != null && vc.InBattle)
+            {
+                WriteLog($"  销毁世界敌人: {eb.name}");
+                Destroy(eb.gameObject);
+                destroyed++;
+            }
         }
-
-        if (wasDoubleBattle && extraWorldEnemy != null)
-        {
-            WriteLog($"  销毁额外巡逻怪: {extraWorldEnemy.name}");
-            Destroy(extraWorldEnemy);
-            extraWorldEnemy = null;
-        }
-        wasDoubleBattle = false;
+        WriteLog($"  共销毁 {destroyed} 个世界怪");
+        triggeringEnemy = null;
 
         Cleanup();
     }
@@ -208,11 +205,13 @@ public class BattleManager : MonoBehaviour
         WriteLog("  💀 玩家战败！");
 
         triggeringEnemy = null;
-        extraWorldEnemy = null;
-        wasDoubleBattle = false;
 
-        foreach (var ae in FindObjectsOfType<ArenaEnemy>())
-            Destroy(ae.gameObject);
+        // 清理竞技场敌人（有 RangedAttack 的 EnemyBase = 竞技场怪）
+        foreach (var eb in FindObjectsOfType<EnemyBase>())
+        {
+            RangedAttack ra = eb.GetComponent<RangedAttack>();
+            if (ra != null) Destroy(eb.gameObject);
+        }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -251,24 +250,8 @@ public class BattleManager : MonoBehaviour
 
     private void ResetAllWorldEnemies()
     {
-        foreach (var ec in FindObjectsOfType<EnemyController>())
-            ec.ResetBattleState();
-    }
-
-    private GameObject FindNearestPatrol(GameObject exclude)
-    {
-        EnemyController nearest = null;
-        float nearestDist = float.MaxValue;
-        Vector3 pos = exclude.transform.position;
-
-        foreach (var ec in FindObjectsOfType<EnemyController>())
-        {
-            if (ec.gameObject == exclude) continue;
-            if (ec.name.Contains("_复制体")) continue;
-            float d = Vector3.Distance(pos, ec.transform.position);
-            if (d < nearestDist) { nearestDist = d; nearest = ec; }
-        }
-        return nearest?.gameObject;
+        foreach (var eb in FindObjectsOfType<EnemyBase>())
+            eb.ResetBattleState();
     }
 
     // ============================================================

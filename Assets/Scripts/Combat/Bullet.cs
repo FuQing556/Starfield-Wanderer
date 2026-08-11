@@ -63,34 +63,19 @@ public class Bullet : MonoBehaviour
         if (!IsInLayerMask(other.gameObject.layer, hitMask))
             return;
 
-        // 命中世界敌人
-        EnemyController worldEnemy = other.GetComponent<EnemyController>();
-        if (worldEnemy != null)
+        // 尝试当作可受伤目标——不管什么类型，实现 IDamageable 就能打
+        IDamageable target = other.GetComponent<IDamageable>();
+        if (target != null)
         {
-            worldEnemy.TakeDamage(damage, transform.position);
-            if (!Piercing) Destroy(gameObject);
+            target.TakeDamage(damage, transform.position);
+
+            // 穿透子弹：穿过敌人保留，命中玩家/障碍物销毁
+            if (!Piercing || target is PlayerHealth)
+                Destroy(gameObject);
             return;
         }
 
-        // 命中竞技场敌人
-        ArenaEnemy arenaEnemy = other.GetComponent<ArenaEnemy>();
-        if (arenaEnemy != null)
-        {
-            arenaEnemy.TakeDamage(damage);
-            if (!Piercing) Destroy(gameObject);
-            return;
-        }
-
-        // 命中玩家（敌人子弹）
-        PlayerHealth playerHealth = other.GetComponent<PlayerHealth>();
-        if (playerHealth != null)
-        {
-            playerHealth.TakeDamage(damage);
-            Destroy(gameObject);
-            return;
-        }
-
-        // 命中障碍物暂时直接销毁
+        // 不是可受伤目标（障碍物等）→ 直接销毁
         Destroy(gameObject);
     }
 

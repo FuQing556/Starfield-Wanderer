@@ -12,7 +12,7 @@ public class ShopPanel : MonoBehaviour
     [SerializeField] private GameObject entryPrefab;    // 单条货物入口 prefab（挂 ShopEntryUI）
 
     [Header("底部")]
-    [SerializeField] private Text goldText;             // "你的金币：XXX"
+    [SerializeField] private Text goldText;             // "金币：XXX"
     [SerializeField] private Button leaveButton;        // 离开按钮
 
     [Header("提示（可选）")]
@@ -123,7 +123,7 @@ public class ShopPanel : MonoBehaviour
     private void RefreshGold()
     {
         if (goldText != null && InventoryManager.Instance != null)
-            goldText.text = $"你的金币：{InventoryManager.Instance.Gold}";
+            goldText.text = $"金币：{InventoryManager.Instance.Gold}";
     }
 
     private void ShowFeedback(string msg)
@@ -144,8 +144,7 @@ public class ShopPanel : MonoBehaviour
 
     private void OnLeave()
     {
-        // 通知 NPC 关店
-        MerchantNPC npc = FindObjectOfType<MerchantNPC>();
+        NPCBrain npc = FindObjectOfType<NPCBrain>();
         if (npc != null) npc.CloseShop();
     }
 }

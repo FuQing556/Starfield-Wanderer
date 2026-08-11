@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// 怪物头顶血条。
-/// 挂在 ArenaEnemy 的子空物体上，拖入 HealthBar Sprite。
+/// 怪物头顶血条。挂在敌人的子空物体上，拖入 HealthBar Sprite。
+/// 从 HealthComponent 读取血量。
 /// </summary>
 public class EnemyHealthBar : MonoBehaviour
 {
@@ -18,13 +18,13 @@ public class EnemyHealthBar : MonoBehaviour
     [SerializeField] private Color barColor = Color.red;
     [SerializeField] private Color bgColor = new Color(0.2f, 0.2f, 0.2f, 0.5f);
 
-    private ArenaEnemy enemy;
+    private HealthComponent health;
     private Transform fillTransform;
 
     private void Start()
     {
-        enemy = GetComponentInParent<ArenaEnemy>();
-        if (enemy == null || barSprite == null)
+        health = GetComponentInParent<HealthComponent>();
+        if (health == null || barSprite == null)
         {
             enabled = false;
             return;
@@ -56,17 +56,15 @@ public class EnemyHealthBar : MonoBehaviour
 
     private void Update()
     {
-        if (enemy == null) return;
+        if (health == null) return;
 
-        transform.position = enemy.transform.position + new Vector3(0f, yOffset, 0f);
+        transform.position = health.transform.position + new Vector3(0f, yOffset, 0f);
 
-        float ratio = Mathf.Clamp01(enemy.CurrentHealth / enemy.MaxHealth);
+        float ratio = Mathf.Clamp01(health.CurrentHealth / health.MaxHealth);
 
         if (fillTransform != null)
         {
-            // x 缩放
             fillTransform.localScale = new Vector3(ratio * fullWidth, barHeight, 1f);
-            // 偏移：补偿中心 pivot，让右边缩、左边不动
             fillTransform.localPosition = new Vector3((ratio - 1f) * fullWidth * 0.5f, 0f, 0f);
         }
     }

@@ -28,6 +28,9 @@ public class ItemData : ScriptableObject
     [TextArea(1, 2)]
     public string skillDescription = "";             // 技能描述（Tooltip 用）
 
+    [Header("消耗品属性（仅消耗品类有效）")]
+    public float healAmount = 30f;                   // 使用后回复多少血
+
     /// <summary>
     /// 从 type 自动推导装备槽位，不再需要手动选两次。
     /// </summary>

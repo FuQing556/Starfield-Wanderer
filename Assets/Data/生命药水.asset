@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b79639502d935a14b971f30ac4faae9e, type: 3}
-  m_Name: "\u836F\u8349"
+  m_Name: "\u751F\u547D\u836F\u6C34"
   m_EditorClassIdentifier: 
-  itemName: "\u836F\u8349"
-  icon: {fileID: 0}
+  itemName: "\u751F\u547D\u836F\u6C34"
+  icon: {fileID: 7482667652216324306, guid: 26da26c6887c843419ce25d7e87cbf7b, type: 3}
   description: 
   gridWidth: 1
   gridHeight: 1
   type: 5
   skill: 0
   skillDescription: 
-  healAmount: 5
+  healAmount: 30

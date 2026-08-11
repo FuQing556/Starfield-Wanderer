@@ -15,6 +15,9 @@ public class GameHUD : MonoBehaviour
     [Header("弹字（屏幕中上，渐隐消失）")]
     [SerializeField] private Text toastText;    // 比如 "背包已满！"
 
+    [Header("手机 UI")]
+    [SerializeField] private GameObject mobileUIRoot; // 把所有手机UI（摇杆+按钮）放一个父物体下，拖这里
+
     private Coroutine toastRoutine;
 
     private void Awake()
@@ -22,6 +25,10 @@ public class GameHUD : MonoBehaviour
         Instance = this;
         if (promptText != null) promptText.enabled = false;
         if (toastText   != null) toastText.enabled   = false;
+
+        // PC 端自动隐藏手机 UI
+        if (mobileUIRoot != null && !Application.isMobilePlatform)
+            mobileUIRoot.SetActive(false);
     }
 
     // ==================== 提示 ====================

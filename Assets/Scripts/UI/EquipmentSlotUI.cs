@@ -50,8 +50,8 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
         InventoryItemUI draggedItem = eventData.pointerDrag?.GetComponent<InventoryItemUI>();
         if (draggedItem == null) return;
 
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return;
+        EquipmentManager equip = EquipmentManager.Instance;
+        if (equip == null) return;
 
         ItemData itemData = draggedItem.ItemData;
         int slotID = draggedItem.SlotID;
@@ -62,7 +62,7 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
 
         // 如果槽位已有装备，先把旧的卸回背包
         // EquipItem 内部会先 UnequipItem
-        bool success = inv.EquipItem(slotID, slotType);
+        bool success = equip.EquipItem(slotID, slotType);
         if (success)
         {
             // 告诉 InventoryItemUI：「你已经被装备了，别再正常放置」
@@ -87,12 +87,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
         // 左键点击 → 卸下装备
         if (eventData.button != PointerEventData.InputButton.Left) return;
 
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return;
+        EquipmentManager equip = EquipmentManager.Instance;
+        if (equip == null) return;
 
-        if (!inv.IsEquipped(slotType)) return; // 空槽，不用卸
+        if (!equip.IsEquipped(slotType)) return; // 空槽，不用卸
 
-        bool success = inv.UnequipItem(slotType);
+        bool success = equip.UnequipItem(slotType);
         if (success)
         {
             RefreshVisual();
@@ -112,10 +112,10 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return;
+        EquipmentManager equip = EquipmentManager.Instance;
+        if (equip == null) return;
 
-        ItemData equipped = inv.GetEquippedItem(slotType);
+        ItemData equipped = equip.GetEquippedItem(slotType);
         string text = equipped != null
             ? $"{SlotName(slotType)}：{equipped.itemName}"
             : $"{SlotName(slotType)}（空）";
@@ -150,10 +150,10 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
     /// </summary>
     public void RefreshVisual()
     {
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return;
+        EquipmentManager equip = EquipmentManager.Instance;
+        if (equip == null) return;
 
-        ItemData equipped = inv.GetEquippedItem(slotType);
+        ItemData equipped = equip.GetEquippedItem(slotType);
 
         if (equipped != null && iconImage != null)
         {
@@ -173,8 +173,8 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
     {
         if (backgroundImage == null) return;
 
-        InventoryManager inv = InventoryManager.Instance;
-        bool hasItem = inv != null && inv.IsEquipped(slotType);
+        EquipmentManager equip = EquipmentManager.Instance;
+        bool hasItem = equip != null && equip.IsEquipped(slotType);
 
         backgroundImage.color = hasItem ? hasItemColor : emptyColor;
     }

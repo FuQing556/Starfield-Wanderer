@@ -4,7 +4,7 @@ using UnityEngine;
 /// 玩家血量——被敌人子弹打中扣血，归零则战斗失败。
 /// 挂在玩家 GameObject 上。
 /// </summary>
-public class PlayerHealth : MonoBehaviour
+public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("生命")]
     [SerializeField] private float maxHealth = 100f;
@@ -22,7 +22,7 @@ public class PlayerHealth : MonoBehaviour
     /// <summary>
     /// 受到伤害。子弹命中时调用。
     /// </summary>
-    public void TakeDamage(float damage)
+    public void TakeDamage(float damage, Vector2 attackerPos)
     {
         // 铁甲减伤：20%
         if (HasEquippedSkill(SkillType.IronArmor))
@@ -37,15 +37,8 @@ public class PlayerHealth : MonoBehaviour
 
     private bool HasEquippedSkill(SkillType skill)
     {
-        InventoryManager inv = InventoryManager.Instance;
-        if (inv == null) return false;
-        foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
-        {
-            if (slot == EquipmentSlot.None) continue;
-            ItemData item = inv.GetEquippedItem(slot);
-            if (item != null && item.skill == skill) return true;
-        }
-        return false;
+        return EquipmentManager.Instance != null
+            && EquipmentManager.Instance.HasSkill(skill);
     }
 
     private void Die()
@@ -60,5 +53,14 @@ public class PlayerHealth : MonoBehaviour
     public void ResetHealth()
     {
         currentHealth = maxHealth;
+    }
+
+    /// <summary>
+    /// 回复指定血量，不超过最大值。药水使用等场景调用。
+    /// </summary>
+    public void Heal(float amount)
+    {
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        Debug.Log($"[PlayerHealth] 回复 {amount} 点，当前 {currentHealth}/{maxHealth}");
     }
 }

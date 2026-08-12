@@ -14,7 +14,6 @@ public class SkillBarUI : MonoBehaviour
     [SerializeField] private Sprite armorSprite;
     [SerializeField] private Sprite blinkSprite;
     [SerializeField] private Sprite doubleShotSprite;
-    [SerializeField] private Sprite magnetSprite;
 
     [Header("布局")]
     [SerializeField] private float iconSize = 36f;
@@ -50,9 +49,6 @@ public class SkillBarUI : MonoBehaviour
 
         if (playerAttack.HasSkill(SkillType.IronArmor))
             buffs.Add(("armor", armorSprite, false, 0f));
-
-        if (playerAttack.HasSkill(SkillType.MagnetCharm))
-            buffs.Add(("magnet", magnetSprite, false, 0f));
 
         if (playerAttack.HasSkill(SkillType.BlinkDodge))
             buffs.Add(("blink", blinkSprite, true, playerAttack.DashCooldownRatio));

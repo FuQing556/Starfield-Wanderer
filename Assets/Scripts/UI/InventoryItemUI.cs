@@ -21,6 +21,11 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     private bool wasEquipped;
     private float lastClickTime; // 双击检测
 
+    // 拖拽期间缓存来源。卡片移到共享 DragLayer 后，不能再从父物体反查原面板。
+    private InventoryPanel sourcePanel;
+    private Transform originalParent;
+    private InventoryPanel highlightedPanel;
+
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
@@ -80,10 +85,24 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         InventoryPanel panel = GetComponentInParent<InventoryPanel>();
         if (panel == null) return;
 
+        sourcePanel = panel;
+        originalParent = transform.parent;
+
         panel.IsDragging = true;
         panel.DraggedItem = this;
 
-        transform.SetAsLastSibling();
+        // 临时移到 Canvas 最上层的共享拖拽层，跨左右面板时不会被另一侧盖住。
+        if (UIDragLayer.Layer != null)
+        {
+            transform.SetParent(UIDragLayer.Layer, worldPositionStays: true);
+            transform.SetAsLastSibling();
+        }
+        else
+        {
+            // DragLayer 尚未配置时，保留原来的单面板拖拽行为。
+            transform.SetAsLastSibling();
+        }
+
         canvasGroup.blocksRaycasts = false;
         dragOffset = (Vector2)transform.position - e.position;
 
@@ -96,47 +115,37 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
     {
         transform.position = e.position + dragOffset;
 
-        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
-        InventoryManager inv = InventoryManager.Instance;
-        if (panel == null || inv == null) return;
+        // 清掉上一帧的提示，再按鼠标当前所在的面板重新画红绿格。
+        if (highlightedPanel != null)
+            highlightedPanel.ClearAllHighlights();
 
-        if (panel.ScreenToGrid(e.position, out int col, out int row))
+        InventoryPanel targetPanel = e.pointerCurrentRaycast.gameObject?.GetComponentInParent<InventoryPanel>();
+        if (targetPanel == null) return;
+
+        InventoryManager inv = targetPanel.Storage;
+        if (inv == null) return;
+
+        if (targetPanel.ScreenToGrid(e.position, out int col, out int row))
         {
             // isRotated=false → 保持当前存储方向
             // isRotated=true → 跟存储方向相反 → 宽高互换
             int w = isRotated ? slot.Height : slot.Width;
             int h = isRotated ? slot.Width : slot.Height;
-            bool ok = inv.CanPlace(w, h, col, row, ignoreSlotID: slotID);
-            panel.UpdateCellHighlight(col, row, w, h, ok);
-        }
-        else
-        {
-            panel.ClearAllHighlights();
+            // 只有在原仓库内移动时，才忽略自己占的格子；跨仓库的 slotID 没有意义。
+            int ignoreID = targetPanel == sourcePanel ? slotID : -1;
+            bool ok = inv.CanPlace(w, h, col, row, ignoreID);
+            targetPanel.UpdateCellHighlight(col, row, w, h, ok);
+            highlightedPanel = targetPanel;
         }
     }
 
     public void OnEndDrag(PointerEventData e)
     {
-        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryPanel panel = sourcePanel;
+        if (panel == null) { SnapBack(null); return; }
+
+        InventoryManager inv = panel.Storage;   // ★ 认面板
         canvasGroup.blocksRaycasts = true;
-
-        if (panel == null || inv == null) { SnapBack(panel); return; }
-
-        // ★ 拖到背包面板外 → 丢弃到场景里
-        RectTransform panelRT = panel.GetComponent<RectTransform>();
-        if (!RectTransformUtility.RectangleContainsScreenPoint(panelRT, e.position, null))
-        {
-            Vector3 dropPos = Vector3.zero;
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                dropPos = player.transform.position;
-
-            inv.DropItem(slotID, dropPos);
-            SnapBack(panel);
-            panel.RefreshAllItems();
-            return;
-        }
 
         // ★ 如果本次拖拽已被装备栏接收——跳过正常放置，直接清理
         if (wasEquipped)
@@ -146,6 +155,64 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             panel.RefreshAllItems();
             return;
         }
+
+        // 找光标下面那个面板（箱子场景：松手在另一个面板上）
+        InventoryPanel targetPanel = e.pointerCurrentRaycast.gameObject?.GetComponentInParent<InventoryPanel>();
+
+        // 拖到所有面板外面
+        if (targetPanel == null)
+        {
+            // 玩家背包可以丢到世界；箱子面板拖出去 = 取消（不让箱子里的东西掉地上）
+            if (panel.AllowDropToWorld && inv != null)
+            {
+                Vector3 dropPos = Vector3.zero;
+                GameObject player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                    dropPos = player.transform.position;
+
+                inv.DropItem(slotID, dropPos);
+            }
+            SnapBack(panel);
+            panel.RefreshAllItems();
+            return;
+        }
+
+        // 拖到别的面板上：先在目标仓库落位成功，再从来源仓库删除，避免物品丢失。
+        if (targetPanel != panel)
+        {
+            InventoryManager targetInv = targetPanel.Storage;
+            bool transferred = false;
+
+            if (targetInv != null
+                && targetPanel.ScreenToGrid(e.position, out int targetCol, out int targetRow))
+            {
+                bool finalRotated = slot.rotated ^ isRotated;
+                int width = finalRotated ? slot.Height : slot.Width;
+                int height = finalRotated ? slot.Width : slot.Height;
+
+                if (targetInv.CanPlace(width, height, targetCol, targetRow))
+                {
+                    int newSlotID = targetInv.PlaceItem(slot.itemData, targetCol, targetRow, finalRotated);
+                    if (newSlotID >= 0)
+                    {
+                        inv.RemoveItem(slotID);
+                        transferred = true;
+                    }
+                }
+            }
+
+            SnapBack(panel);
+            panel.RefreshAllItems();
+            targetPanel.RefreshAllItems();
+
+            if (!transferred)
+                GameHUD.Instance?.ShowToast("目标位置放不下！", 1.5f);
+
+            return;
+        }
+
+        // 同一个面板：正常放置
+        if (inv == null) { SnapBack(panel); panel.RefreshAllItems(); return; }
 
         bool placed = false;
         if (panel.ScreenToGrid(e.position, out int col, out int row))
@@ -208,11 +275,13 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
                 ph.Heal(slot.itemData.healAmount);
         }
 
-        // 从背包移除
-        InventoryManager.Instance?.RemoveItem(slotID);
+        // 从背包/箱子移除（用所在面板绑定的仓库）
+        InventoryPanel panel = GetComponentInParent<InventoryPanel>();
+        InventoryManager inv = panel != null ? panel.Storage : null;
+        if (inv != null) inv.RemoveItem(slotID);
 
         // 刷新面板
-        GetComponentInParent<InventoryPanel>()?.RefreshAllItems();
+        panel?.RefreshAllItems();
 
         Debug.Log($"[InventoryItemUI] 使用消耗品：{slot.itemData.itemName}，回复 {slot.itemData.healAmount} 血");
     }
@@ -237,6 +306,16 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
     private void SnapBack(InventoryPanel panel)
     {
+        // 刷新前放回原容器；否则 RefreshAllItems 不会销毁 DragLayer 下这张旧卡片。
+        if (originalParent != null)
+            transform.SetParent(originalParent, worldPositionStays: true);
+
+        if (highlightedPanel != null)
+        {
+            highlightedPanel.ClearAllHighlights();
+            highlightedPanel = null;
+        }
+
         if (panel != null)
         {
             panel.IsDragging  = false;

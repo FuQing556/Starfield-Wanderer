@@ -36,6 +36,7 @@ public class BattleManager : MonoBehaviour
     private int enemiesThisWave;             // 当前每波生成数量（双倍时翻倍）
     private float waveTimer;                 // 下一波倒计时
     private bool allWavesSpawned;            // 所有波次已出完
+    private bool backstabBattle;             // 背刺入战：所有竞技场怪初始半血
 
     // 世界敌人引用（仅用于战败时不销毁）
     private GameObject triggeringEnemy;
@@ -47,7 +48,8 @@ public class BattleManager : MonoBehaviour
     {
         Instance = this;
 
-        string dir = @"C:\Users\Administrator\Desktop\deepsleep\test_logs";
+        // 日志写到项目内 test_logs/（不写死 C 盘绝对路径，换机器也能跑）
+        string dir = Path.Combine(Application.dataPath, "..", "test_logs");
         Directory.CreateDirectory(dir);
         logPath = Path.Combine(dir, $"battle_{System.DateTime.Now:yyyyMMdd_HHmmss}.txt");
         WriteLog("=== BattleManager 日志开始 ===");
@@ -97,10 +99,10 @@ public class BattleManager : MonoBehaviour
     /// 进入战斗。alertedCount = 被呼唤的同伴数量。
     /// 每波怪物数量 × (1 + alertedCount)。即 0 = 正常，3 = 四倍。
     /// </summary>
-    public void OnBattleStart(GameObject enemy, int alertedCount)
+    public void OnBattleStart(GameObject enemy, int alertedCount, bool isBackstab = false)
     {
         int multiplier = 1 + alertedCount;
-        WriteLog($"OnBattleStart(enemy={enemy?.name} alerted={alertedCount} multiplier=×{multiplier})");
+        WriteLog($"OnBattleStart(enemy={enemy?.name} alerted={alertedCount} multiplier=×{multiplier} backstab={isBackstab})");
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player == null || arenaCenter == null) return;
@@ -110,6 +112,7 @@ public class BattleManager : MonoBehaviour
             battleEntryPos = player.transform.position;
             inBattle = true;
 
+            backstabBattle = isBackstab;   // 背刺入战 → 竞技场怪半血
             triggeringEnemy = enemy;
             enemiesThisWave = enemiesPerWave * multiplier;
             WriteLog($"  倍率 ×{multiplier}");
@@ -146,7 +149,15 @@ public class BattleManager : MonoBehaviour
             {
                 Vector2 offset = Random.insideUnitCircle * scatterRadius;
                 Vector3 spawnPos = arenaCenter.position + new Vector3(offset.x, offset.y, 0);
-                Instantiate(arenaEnemyPrefab, spawnPos, Quaternion.identity);
+                GameObject enemy = Instantiate(arenaEnemyPrefab, spawnPos, Quaternion.identity);
+
+                // ★ 背刺入战：所有竞技场怪初始半血（半血对"打得更快"有真实意义）
+                if (backstabBattle)
+                {
+                    HealthComponent hc = enemy.GetComponent<HealthComponent>();
+                    if (hc != null) hc.SetHealth(hc.MaxHealth / 2f);
+                }
+
                 enemiesAlive++;
             }
         }
@@ -238,6 +249,7 @@ public class BattleManager : MonoBehaviour
         enemiesAlive = 0;
         waveCount = 0;
         allWavesSpawned = false;
+        backstabBattle = false;
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)

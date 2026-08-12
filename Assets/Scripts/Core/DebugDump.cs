@@ -19,7 +19,8 @@ public static class DebugDump
 
     public static void DumpAll()
     {
-        string dir = @"C:\Users\Administrator\Desktop\deepsleep\test_logs";
+        // 日志写到项目内 test_logs/（不写死 C 盘绝对路径，换机器也能跑）
+        string dir = Path.Combine(Application.dataPath, "..", "test_logs");
         Directory.CreateDirectory(dir);
         string path = Path.Combine(dir, $"dump_{System.DateTime.Now:yyyyMMdd_HHmmss}.txt");
         var sb = new StringBuilder();

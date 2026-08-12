@@ -68,17 +68,26 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
         }
     }
 
+    /// <summary>追丢玩家后走回 EnemyBase 记录的出生点；到达时返回 true。</summary>
+    public bool ReturnToSpawn(EnemyBase enemy)
+    {
+        Vector2 home = enemy.SpawnPoint;
+        Vector2 dir = home - (Vector2)transform.position;
+
+        if (dir.magnitude < 0.1f)
+        {
+            rb.velocity = Vector2.zero;
+            return true;
+        }
+
+        rb.velocity = dir.normalized * speed;
+        enemy.UpdateFacing(rb.velocity.x);
+        return false;
+    }
+
     private void PickNewTarget()
     {
         targetPoint = spawnPoint + Random.insideUnitCircle * radius;
-    }
-
-    /// <summary>强制重置到出生点（敌人回巢时调用）。</summary>
-    public void ReturnToSpawn()
-    {
-        spawnPoint = transform.position;
-        PickNewTarget();
-        isWaiting = false;
     }
 
     private void OnDrawGizmosSelected()

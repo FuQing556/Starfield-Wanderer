@@ -18,6 +18,12 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
     private bool isWindingUp;
     private HealthComponent health;
 
+    /// <summary>近战命中距离。世界怪追击时需要走进这个距离才开始“入战前摇”。</summary>
+    public float Range => range;
+
+    /// <summary>攻击前摇时长。世界怪复用它作为进入竞技场前的等待时间。</summary>
+    public float Windup => windup;
+
     private void Awake()
     {
         health = GetComponent<HealthComponent>();

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -19,6 +20,9 @@ public class VisionComponent : MonoBehaviour
     [Header("呼唤同伴")]
     [SerializeField] private float alertRadius = 6f;
 
+    [Header("追丢")]
+    [SerializeField] private float loseRange = 5f;          // 超过这个距离就放弃追击、回巢
+
     [Header("背刺")]
     [SerializeField] private float backstabAngle = 60f;
     // backstabMultiplier 在 MeleeAttack 组件上，这里只管"是否背刺入战"
@@ -34,15 +38,20 @@ public class VisionComponent : MonoBehaviour
     private Transform player;
     private SpriteRenderer spriteRenderer;
     private EnemyBase enemy;
-    private HealthComponent health;
     private float detectionProgress;
     private float graceTimer;
     private bool inBattle;
 
+    // 黄条满后进入“追击入战”阶段：此时还不能设 inBattle，否则 EnemyBase 会立即冻结它。
+    private bool isAlerted;
+    private bool canStartArenaBattle;
+    private bool isWindingUpForArena;
+    private float arenaWindupTimer;
+    private readonly List<VisionComponent> alertedAllies = new();
+
     private void Awake()
     {
         enemy = GetComponent<EnemyBase>();
-        health = GetComponent<HealthComponent>();
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (enemy != null && enemy.Data != null)
@@ -53,6 +62,7 @@ public class VisionComponent : MonoBehaviour
             drainMult      = enemy.Data.detectionDrainMult;
             grace          = enemy.Data.detectionGrace;
             alertRadius    = enemy.Data.alertRadius;
+            loseRange      = enemy.Data.loseRange;
             backstabAngle  = enemy.Data.backstabAngle;
         }
     }
@@ -67,6 +77,12 @@ public class VisionComponent : MonoBehaviour
     {
         if (inBattle) return;
         if (enemy == null) return;
+
+        // 正在回出生点时不重新读黄条；到家恢复巡逻后才允许再次发现玩家。
+        if (enemy.State == EnemyState.ReturnToSpawn) return;
+
+        // 已完全发现后，状态机负责追击；不再重复读黄条。
+        if (isAlerted) return;
 
         IsPlayerVisible = CheckVision();
 
@@ -102,11 +118,13 @@ public class VisionComponent : MonoBehaviour
         {
             detectionProgress = 0f;
             graceTimer = 0f;
-            inBattle = true;
-            // 完全发现 → 叫上所有同伴一起上
-            int alerted = AlertNearby();
-            BattleManager.Instance?.OnBattleStart(gameObject, alerted);
+
+            // 完全发现 → 先在世界追玩家。贴脸前摇结束后，才真正进入竞技场。
+            isAlerted = true;
+            canStartArenaBattle = true;
+            AlertNearby();
             enemy.State = EnemyState.Chase;
+            Debug.Log($"[Vision] {name} 黄条满：开始追击，贴脸后进入竞技场");
         }
     }
 
@@ -122,18 +140,24 @@ public class VisionComponent : MonoBehaviour
     {
         if (inBattle) return damage;
 
+        // 已经发现并在追击时被玩家反打：直接开战，不需要再等一次前摇。
+        if (isAlerted)
+        {
+            StartArenaBattle();
+            return damage;
+        }
+
         bool isBackstab = IsBehind(attackerPos);
 
         if (enemy.State == EnemyState.Patrol && isBackstab)
         {
-            // 未发现 + 背刺 → 半血入战，不呼唤同伴
-            if (health != null) health.SetHealth(health.MaxHealth / 2f);
+            // 未发现 + 背刺 → 竞技场怪半血入战（半血由 BattleManager 出怪时应用），不呼唤同伴
             inBattle = true;
             detectionProgress = 0f;
             graceTimer = 0f;
-            BattleManager.Instance?.OnBattleStart(gameObject, alertedCount: 0);
+            BattleManager.Instance?.OnBattleStart(gameObject, alertedCount: 0, isBackstab: true);
             enemy.State = EnemyState.Chase;
-            Debug.Log($"[Vision] {name} 背刺入战（半血）");
+            Debug.Log($"[Vision] {name} 背刺入战（竞技场怪半血）");
             return damage;
         }
 
@@ -150,8 +174,11 @@ public class VisionComponent : MonoBehaviour
     /// <summary>被同伴呼唤，强制进入追击。</summary>
     public void ForceChase()
     {
-        if (inBattle) return;
-        inBattle = true;
+        if (inBattle || isAlerted) return;
+
+        // 同伴只负责追击和制造压迫感；真正触发竞技场的是最初发现玩家的那只怪。
+        isAlerted = true;
+        canStartArenaBattle = false;
         detectionProgress = 0f;
         graceTimer = 0f;
         enemy.State = EnemyState.Chase;
@@ -168,8 +195,95 @@ public class VisionComponent : MonoBehaviour
     public void ResetBattleState()
     {
         inBattle = false;
+        isAlerted = false;
+        canStartArenaBattle = false;
+        isWindingUpForArena = false;
+        arenaWindupTimer = 0f;
+        alertedAllies.Clear();
         detectionProgress = 0f;
         graceTimer = 0f;
+    }
+
+    /// <summary>追击中的怪是否已和玩家拉开到追丢距离。</summary>
+    public bool HasLostPlayer()
+    {
+        return isAlerted && (player == null
+            || Vector2.Distance(transform.position, player.position) > loseRange);
+    }
+
+    /// <summary>
+    /// 放弃追击。主怪会一并通知它叫来的同伴，避免主怪回巢、同伴还无限追人的情况。
+    /// </summary>
+    public void LosePlayer()
+    {
+        foreach (VisionComponent ally in alertedAllies)
+            ally?.LosePlayer();
+        alertedAllies.Clear();
+
+        isAlerted = false;
+        canStartArenaBattle = false;
+        CancelArenaWindup();
+        detectionProgress = 0f;
+        graceTimer = 0f;
+
+        // 主怪通知同伴放弃时，同伴不会再经过 EnemyBase 自己的 HasLostPlayer 分支。
+        // 因此要在这里直接把“我自己”的状态切为回巢，不能只清掉 isAlerted。
+        if (enemy != null && enemy.State != EnemyState.Dead)
+        {
+            Rigidbody2D rb = GetComponent<Rigidbody2D>();
+            if (rb != null) rb.velocity = Vector2.zero;
+            enemy.State = EnemyState.ReturnToSpawn;
+        }
+    }
+
+    // ============================================================
+    // 追击后入战
+    // ============================================================
+
+    /// <summary>世界怪贴脸后调用：等待近战前摇，再传送进竞技场。</summary>
+    public void TryStartArenaBattle(float windup)
+    {
+        if (inBattle || !canStartArenaBattle) return;
+
+        if (!isWindingUpForArena)
+        {
+            isWindingUpForArena = true;
+            arenaWindupTimer = windup;
+            Debug.Log($"[Vision] {name} 贴脸前摇 {windup:F1}s，准备进入竞技场");
+        }
+
+        arenaWindupTimer -= Time.deltaTime;
+        if (arenaWindupTimer <= 0f)
+            StartArenaBattle();
+    }
+
+    /// <summary>玩家跑出近战范围时取消前摇，下次贴脸重新开始。</summary>
+    public void CancelArenaWindup()
+    {
+        isWindingUpForArena = false;
+        arenaWindupTimer = 0f;
+    }
+
+    /// <summary>真正开战：主怪与被呼唤同伴一起冻结，并按同伴数量增加竞技场波次。</summary>
+    private void StartArenaBattle()
+    {
+        if (inBattle) return;
+
+        inBattle = true;
+        isWindingUpForArena = false;
+
+        foreach (VisionComponent ally in alertedAllies)
+            ally?.JoinBattle();
+
+        BattleManager.Instance?.OnBattleStart(gameObject, alertedAllies.Count);
+        enemy.State = EnemyState.Chase;
+    }
+
+    /// <summary>被主怪呼唤的同伴在真正开战时加入战斗，供 BattleManager 胜利后统一销毁。</summary>
+    private void JoinBattle()
+    {
+        inBattle = true;
+        isWindingUpForArena = false;
     }
 
     // ============================================================
@@ -204,21 +318,20 @@ public class VisionComponent : MonoBehaviour
     // ============================================================
 
     /// <summary>呼唤附近同伴，返回被唤醒的数量。</summary>
-    private int AlertNearby()
+    private void AlertNearby()
     {
+        alertedAllies.Clear();
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, alertRadius);
-        int alerted = 0;
         foreach (var col in colliders)
         {
             VisionComponent other = col.GetComponent<VisionComponent>();
-            if (other != null && other != this && !other.InBattle)
+            if (other != null && other != this && !other.InBattle && !alertedAllies.Contains(other))
             {
                 other.ForceChase();
-                alerted++;
+                alertedAllies.Add(other);
             }
         }
-        Debug.Log($"[Vision] {name} 呼唤了 {alerted} 个同伴（半径 {alertRadius}），倍率 ×{1 + alerted}");
-        return alerted;
+        Debug.Log($"[Vision] {name} 呼唤了 {alertedAllies.Count} 个同伴（半径 {alertRadius}），倍率 ×{1 + alertedAllies.Count}");
     }
 
     // ============================================================

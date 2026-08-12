@@ -8,8 +8,13 @@ using UnityEngine;
 /// </summary>
 public class PlayerAttack : MonoBehaviour
 {
+    // Dash 动画为 8 帧、12 FPS：总时长约 0.67 秒，中点约 0.33 秒执行实际位移。
+    public const float DashDuration = 8f / 12f;
+    public const float DashMoveTime = DashDuration * 0.5f;
+
     [Header("近战（世界地图）")]
     [SerializeField] private float attackRange = 1.5f;
+    [SerializeField, Range(1f, 360f)] private float meleeAngle = 100f; // 面前扇形的总角度
     [SerializeField] private float baseDamage = 15f;
     [SerializeField] private LayerMask enemyLayer;
 
@@ -17,7 +22,7 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private GameObject bulletPrefab;      // 子弹 prefab（挂 Bullet 脚本）
     [SerializeField] private float fireRate = 0.3f;        // 射击间隔（秒）
 
-    [Header("闪现衣")]
+    [Header("闪现")]
     [SerializeField] private float dashDistance = 3f;      // 瞬移距离
     [SerializeField] private float dashCooldown = 2f;      // CD 秒
 
@@ -31,9 +36,23 @@ public class PlayerAttack : MonoBehaviour
 
     private float dashTimer;
     private bool nextShotDouble;
+    private DashDustEffect dashDustEffect;
+    private PlayerHealth playerHealth;
+    private PlayerSpriteAnimator spriteAnimator;
+
+    /// <summary>
+    /// 闪现过程由动画和其他表现组件读取；不锁玩家移动输入。
+    /// </summary>
+    public bool IsDashing { get; private set; }
+    public Vector2 DashDirection { get; private set; } = Vector2.right;
 
     private void Update()
     {
+        if (playerHealth != null && playerHealth.IsDead) return;
+
+        // Time.timeScale = 0 时 Update 仍会执行，所以输入逻辑必须主动拦截。
+        if (GamePauseManager.IsPaused) return;
+
         // CD 倒计时
         if (dashTimer > 0) dashTimer -= Time.deltaTime;
 
@@ -54,6 +73,14 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    private void Awake()
+    {
+        playerHealth = GetComponent<PlayerHealth>();
+        spriteAnimator = GetComponent<PlayerSpriteAnimator>();
+        // DashDust 是 Player 的子物体，默认禁用也仍可通过 Transform 找到组件。
+        dashDustEffect = GetComponentInChildren<DashDustEffect>(true);
+    }
+
     // ============================================================
     // 手机按钮（绑 UI Button OnClick）
     // ============================================================
@@ -63,6 +90,9 @@ public class PlayerAttack : MonoBehaviour
     /// </summary>
     public void OnMobileAttack()
     {
+        if (playerHealth != null && playerHealth.IsDead) return;
+        if (GamePauseManager.IsPaused) return;
+
         if (InventoryPanel.MainPanel != null && InventoryPanel.MainPanel.IsOpen)
             return;
 
@@ -77,6 +107,9 @@ public class PlayerAttack : MonoBehaviour
     /// </summary>
     public void OnMobileDash()
     {
+        if (playerHealth != null && playerHealth.IsDead) return;
+        if (GamePauseManager.IsPaused) return;
+
         if (!HasSkill(SkillType.BlinkDodge) || dashTimer > 0f) return;
         Dash(GetMobileAimDir());
     }
@@ -108,15 +141,34 @@ public class PlayerAttack : MonoBehaviour
 
     private void Dash(Vector2 dir)
     {
+        if (IsDashing || (playerHealth != null && playerHealth.IsDead)) return;
+
         // 方向优先于键盘，没有就用参数（手机传摇杆方向）
         Vector2 kbDir = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         if (kbDir.magnitude > 0.1f) dir = kbDir.normalized;
 
-        transform.position += (Vector3)(dir * dashDistance);
+        DashDirection = dir.normalized;
         nextShotDouble = true;
         dashTimer = dashCooldown;
 
-        Debug.Log($"[PlayerAttack] 闪现！方向={dir}");
+        dashDustEffect?.Play(DashDirection);
+        StartCoroutine(DashRoutine());
+        Debug.Log($"[PlayerAttack] 闪现开始，方向={DashDirection}");
+    }
+
+    private System.Collections.IEnumerator DashRoutine()
+    {
+        IsDashing = true;
+
+        // 前半段播放动作，抵达动画中点后再从“当前坐标”位移。
+        // 移动控制没有被锁住，因此玩家可以在这段时间继续走路。
+        yield return new WaitForSeconds(DashMoveTime);
+        if (playerHealth == null || !playerHealth.IsDead)
+            transform.position += (Vector3)(DashDirection * dashDistance);
+
+        // 后半段播放完，才交还普通 Walk / Idle 动画。
+        yield return new WaitForSeconds(DashDuration - DashMoveTime);
+        IsDashing = false;
     }
 
     // ============================================================
@@ -125,7 +177,11 @@ public class PlayerAttack : MonoBehaviour
 
     private void MeleeAttack()
     {
+        // 第一步：圆形查询只负责找“附近候选”。
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayer);
+        Vector2 attackDirection = spriteAnimator != null
+            ? spriteAnimator.FacingDirection
+            : PlayerController.LastMoveDir;
 
         EnemyBase closestEnemy = null;
         Harvestable closestHarvest = null;
@@ -134,7 +190,12 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            float dist = Vector2.Distance(transform.position, hit.transform.position);
+            Vector2 toTarget = hit.transform.position - transform.position;
+            float dist = toTarget.magnitude;
+
+            // 第二步：用夹角过滤候选，只保留角色面前扇形内的目标。
+            if (dist <= 0.001f || Vector2.Angle(attackDirection, toTarget) > meleeAngle * 0.5f)
+                continue;
 
             EnemyBase enemy = hit.GetComponent<EnemyBase>();
             if (enemy != null && dist < closestEnemyDist)

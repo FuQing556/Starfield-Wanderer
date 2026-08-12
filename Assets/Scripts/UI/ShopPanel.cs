@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 商店面板——显示货物列表 + 购买按钮 + 金币显示。
-/// 挂在商店面板根节点上，MerchantNPC 在对话结束后调用 Initialize()。
+/// 挂在商店面板根节点上，NPCBrain 在对话结束后调用 Initialize()。
 /// </summary>
 public class ShopPanel : MonoBehaviour
 {
@@ -20,6 +20,7 @@ public class ShopPanel : MonoBehaviour
 
     private ShopSlot[] shopSlots;  // 当前货物
     private string merchantName;   // （暂存，后续可能用到）
+    private NPCBrain ownerNPC;     // 谁开的商店，谁负责关（不再满场景 FindObjectOfType）
 
     private void Awake()
     {
@@ -30,10 +31,11 @@ public class ShopPanel : MonoBehaviour
     }
 
     /// <summary>
-    /// 由 MerchantNPC 调用，传入货物数据并刷新 UI。
+    /// 由 NPCBrain 调用，传入货物数据并刷新 UI。npc 用于关店时通知。
     /// </summary>
-    public void Initialize(string name, ShopSlot[] slots)
+    public void Initialize(NPCBrain npc, string name, ShopSlot[] slots)
     {
+        ownerNPC = npc;
         merchantName = name;
         shopSlots = slots;
 
@@ -144,7 +146,6 @@ public class ShopPanel : MonoBehaviour
 
     private void OnLeave()
     {
-        NPCBrain npc = FindObjectOfType<NPCBrain>();
-        if (npc != null) npc.CloseShop();
+        ownerNPC?.CloseShop();
     }
 }

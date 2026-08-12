@@ -13,10 +13,12 @@ public class ChaseMovement : MonoBehaviour, IMovementBehaviour
 
     private Rigidbody2D rb;
     private Transform player;
+    private MeleeAttack meleeAttack;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        meleeAttack = GetComponent<MeleeAttack>();
 
         EnemyBase eb = GetComponent<EnemyBase>();
         if (eb != null && eb.Data != null)
@@ -38,7 +40,10 @@ public class ChaseMovement : MonoBehaviour, IMovementBehaviour
 
         float dist = Vector2.Distance(transform.position, player.position);
 
-        if (dist <= stopDistance)
+        // 近战怪必须走进自己的攻击距离；远程怪才使用原本的停步距离。
+        float currentStopDistance = meleeAttack != null ? meleeAttack.Range * 0.9f : stopDistance;
+
+        if (dist <= currentStopDistance)
         {
             rb.velocity = Vector2.zero;
         }

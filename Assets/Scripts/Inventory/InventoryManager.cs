@@ -9,6 +9,10 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
+    [Header("身份")]
+    [Tooltip("勾上 = 这是玩家背包（全游戏唯一全局实例）。箱子等其它容器不要勾。")]
+    [SerializeField] private bool isPlayer;
+
     [Header("网格设置")]
     [SerializeField] private int gridColumns = 8;   // 列数
     [SerializeField] private int gridRows = 6;       // 行数
@@ -37,10 +41,10 @@ public class InventoryManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        // ★ 只有玩家背包（勾了 isPlayer）才能成为全局 Instance。
+        //   箱子等其它容器：不抢全局、也不自毁，安静当一个数据仓库。
+        if (isPlayer && Instance == null)
             Instance = this;
-        else
-            Destroy(gameObject);
 
         grid = new int[gridColumns, gridRows];
         // 初始化为 -1（全空）

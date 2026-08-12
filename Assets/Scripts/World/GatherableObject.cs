@@ -30,6 +30,16 @@ public class GatherableObject : MonoBehaviour, IInteractable
             spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
     }
 
+    private void OnEnable()
+    {
+        InteractableRegistry.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        InteractableRegistry.Unregister(this);
+    }
+
     public void Initialize(ItemData data)
     {
         itemData = data;

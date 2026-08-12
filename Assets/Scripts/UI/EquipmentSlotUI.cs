@@ -96,8 +96,12 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
         if (success)
         {
             RefreshVisual();
-            // 刷新背包面板——物品又出现在格子里了
-            InventoryPanel.MainPanel?.RefreshAllItems();
+            // ★ 箱子开着时刷新箱子面板（左面板就是玩家背包）；平时才刷新独立背包。
+            //   不能刷隐藏的独立背包——Instantiate 到隐藏容器里 Awake 不跑，会 NRE。
+            if (ChestUI.IsOpen)
+                ChestUI.RefreshAll();
+            else
+                InventoryPanel.MainPanel?.RefreshAllItems();
         }
         else
         {
@@ -120,12 +124,15 @@ public class EquipmentSlotUI : MonoBehaviour, IDropHandler, IPointerClickHandler
             ? $"{SlotName(slotType)}：{equipped.itemName}"
             : $"{SlotName(slotType)}（空）";
 
-        InventoryPanel.MainPanel?.ShowTooltip(text, eventData.position);
+        // 装备槽属于哪个背包面板，就让哪个面板显示 Tooltip。
+        // 开箱时 MainPanel（独立背包）是隐藏的；硬调用它会在隐藏物体上启动协程而报错。
+        GetComponentInParent<InventoryPanel>()?.ShowTooltip(text, eventData.position);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        InventoryPanel.MainPanel?.HideTooltip();
+        // 和显示时使用同一个所属面板，不能固定写死 MainPanel。
+        GetComponentInParent<InventoryPanel>()?.HideTooltip();
     }
 
     private static string SlotName(EquipmentSlot slot)

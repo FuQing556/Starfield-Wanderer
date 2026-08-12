@@ -38,6 +38,16 @@ public class NPCBrain : MonoBehaviour, IInteractable
         if (shopPanel     != null) shopPanel.SetActive(false);
     }
 
+    private void OnEnable()
+    {
+        InteractableRegistry.Register(this);
+    }
+
+    private void OnDisable()
+    {
+        InteractableRegistry.Unregister(this);
+    }
+
     private void Start()
     {
         GameObject p = GameObject.FindGameObjectWithTag("Player");
@@ -111,7 +121,8 @@ public class NPCBrain : MonoBehaviour, IInteractable
         {
             shopPanel.SetActive(true);
             ShopPanel sp = shopPanel.GetComponent<ShopPanel>();
-            if (sp != null) sp.Initialize(data.npcName, data.shopSlots);
+            // 把自己传进去——谁开的店，谁负责关（多 NPC 时不会找错）
+            if (sp != null) sp.Initialize(this, data.npcName, data.shopSlots);
         }
     }
 

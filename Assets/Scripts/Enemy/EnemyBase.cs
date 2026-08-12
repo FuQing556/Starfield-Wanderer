@@ -119,6 +119,15 @@ public class EnemyBase : MonoBehaviour, IDamageable
                 break;
 
             case EnemyState.Chase:
+                // 世界怪追得太远 → 放弃并回出生点。竞技场怪没有 VisionComponent，不受影响。
+                if (vision != null && vision.HasLostPlayer())
+                {
+                    vision.LosePlayer();
+                    rb.velocity = Vector2.zero;
+                    State = EnemyState.ReturnToSpawn;
+                    break;
+                }
+
                 chaseMovement?.Tick(this);
 
                 // 远程攻击：竞技场怪在追击时射击
@@ -143,8 +152,21 @@ public class EnemyBase : MonoBehaviour, IDamageable
                 // 不移动，专注攻击
                 if (meleeAttack != null)
                 {
-                    if (!meleeAttack.IsInRange(this, player))
+                    if (vision != null && vision.HasLostPlayer())
+                    {
+                        vision.LosePlayer();
+                        rb.velocity = Vector2.zero;
+                        State = EnemyState.ReturnToSpawn;
+                    }
+                    else if (!meleeAttack.IsInRange(this, player))
+                    {
+                        // 世界怪刚抬手、玩家又跑开：取消本次入战前摇，继续追击。
+                        vision?.CancelArenaWindup();
                         State = EnemyState.Chase; // 玩家跑了
+                    }
+                    // 有 VisionComponent 的是世界战斗触发器：只做前摇，绝不在野外扣玩家血。
+                    else if (vision != null)
+                        vision.TryStartArenaBattle(meleeAttack.Windup);
                     else
                         meleeAttack.Tick(this, player);
                 }
@@ -155,39 +177,14 @@ public class EnemyBase : MonoBehaviour, IDamageable
                 break;
 
             case EnemyState.ReturnToSpawn:
-                ReturnToSpawnTick();
+                // 没有巡逻组件的怪没有“家”可回，直接结束这段状态。
+                if (patrolMovement == null || patrolMovement.ReturnToSpawn(this))
+                    State = EnemyState.Patrol;
                 break;
 
             case EnemyState.Dead:
                 break;
         }
-    }
-
-    // ============================================================
-    // 回巢
-    // ============================================================
-
-    private void ReturnToSpawnTick()
-    {
-        Vector2 dir = spawnPoint - (Vector2)transform.position;
-        if (dir.magnitude < 0.2f)
-        {
-            transform.position = spawnPoint;
-            rb.velocity = Vector2.zero;
-            State = EnemyState.Patrol;
-        }
-        else
-        {
-            rb.velocity = dir.normalized * 1.5f; // 回巢速度跟巡逻一致
-            UpdateFacing(rb.velocity.x);
-        }
-    }
-
-    /// <summary>丢失玩家后切回巢。VisionComponent 或外部调用。</summary>
-    public void ReturnToSpawn()
-    {
-        State = EnemyState.ReturnToSpawn;
-        rb.velocity = Vector2.zero;
     }
 
     // ============================================================
@@ -198,11 +195,17 @@ public class EnemyBase : MonoBehaviour, IDamageable
     {
         if (health == null || health.IsDead) return;
 
-        // 视野组件处理首击（背刺/入战）
+        // 视野组件处理首击（背刺/正面判定 → 决定竞技场战斗难度）
         if (vision != null)
-            damage = vision.ProcessFirstStrike(damage, attackerPos);
+        {
+            vision.ProcessFirstStrike(damage, attackerPos);
 
-        // 扣血
+            // ★ 有视野的 = 野外战斗触发器：无论处于读条、追击还是已入竞技场，
+            //   都不吃野外伤害，避免被反复攻击磨死。
+            return;
+        }
+
+        // 扣血（只有竞技场怪等非触发器才会走到这里）
         health.TakeDamage(damage);
     }
 
@@ -273,6 +276,6 @@ public enum EnemyState
     Suspicious,      // 怀疑（发现玩家，读条中）
     Chase,           // 追击
     Attack,          // 近战攻击中
-    ReturnToSpawn,   // 回巢
+    ReturnToSpawn,   // 追丢玩家，回出生点
     Dead             // 死亡
 }

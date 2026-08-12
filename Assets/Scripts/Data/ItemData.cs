@@ -93,7 +93,6 @@ public enum SkillType
     PenetratingShot,   // 穿透：子弹穿过敌人不消失
     IronArmor,         // 铁甲：受到伤害只有 20%
     BlinkDodge,        // 闪现衣：空格瞬移 + 下次攻击双发
-    MagnetCharm,       // 磁铁护符：自动吸取掉落物
 }
 
 /// <summary>

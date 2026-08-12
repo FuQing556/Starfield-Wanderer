@@ -13,12 +13,16 @@ public class PlayerInteract : MonoBehaviour
 
     private void Update()
     {
-        // 背包开着不交互
+        // 暂停时 Update 仍在跑，不能让 F 键穿透 UI 去触发世界交互。
+        if (GamePauseManager.IsPaused) return;
+
+        // 背包或箱子开着不交互
+        if (ChestUI.IsOpen) return;
         if (InventoryPanel.MainPanel != null && InventoryPanel.MainPanel.IsOpen)
             return;
 
-        // 找最近的
-        currentTarget = FindClosestInteractable();
+        // 只在登记的可交互物里找最近的，不再扫描全场所有脚本。
+        currentTarget = InteractableRegistry.FindClosest(transform.position, maxRange);
 
         // 显示提示
         if (currentTarget != null && currentTarget.IsInRange)
@@ -31,23 +35,4 @@ public class PlayerInteract : MonoBehaviour
             currentTarget.Interact();
     }
 
-    private IInteractable FindClosestInteractable()
-    {
-        IInteractable best = null;
-        float bestDist = maxRange;
-
-        foreach (var obj in FindObjectsOfType<MonoBehaviour>())
-        {
-            if (obj is not IInteractable interactable) continue;
-            if (!interactable.IsInRange) continue;
-
-            float dist = Vector2.Distance(transform.position, obj.transform.position);
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                best = interactable;
-            }
-        }
-        return best;
-    }
 }

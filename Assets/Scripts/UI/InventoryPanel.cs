@@ -23,8 +23,34 @@ public class InventoryPanel : MonoBehaviour
     [SerializeField] private Text tooltipText;
     [SerializeField] private Vector2 tooltipOffset = new Vector2(-5, 5);
 
+    [Header("绑定仓库")]
+    [Tooltip("这个面板显示哪个仓库的数据。不拖 = 玩家全局背包；箱子面板拖箱子的存储。")]
+    [SerializeField] private InventoryManager storage;
+
+    [Header("面板行为")]
+    [Tooltip("能不能把物品拖出面板丢到世界（玩家背包用；箱子面板关掉）")]
+    [SerializeField] private bool allowDropToWorld = true;
+    [Tooltip("能不能用 Tab 开关面板（独立背包用；箱子面板关掉）")]
+    [SerializeField] private bool allowTabToggle = true;
+    [Tooltip("这个面板要当'主背包面板'吗（独立背包勾；箱子框架里的两个面板别勾）")]
+    [SerializeField] private bool claimMainPanel = true;
+
     /// <summary>主面板引用。</summary>
     public static InventoryPanel MainPanel { get; private set; }
+
+    /// <summary>这个面板绑定的仓库。没拖 storage 就用玩家全局背包。</summary>
+    public InventoryManager Storage => storage != null ? storage : InventoryManager.Instance;
+
+    /// <summary>是否允许把物品拖出去丢到世界（InventoryItemUI 读这个）。</summary>
+    public bool AllowDropToWorld => allowDropToWorld;
+
+    /// <summary>运行时换绑仓库（箱子面板用）。换绑后重生成格子，适配新仓库的网格大小。</summary>
+    public void SetStorage(InventoryManager manager)
+    {
+        storage = manager;
+        EnsureGridLayoutGroup();
+        GenerateCells();
+    }
 
     public bool IsOpen => isOpen;
     public bool IsDragging { get; set; }
@@ -46,8 +72,16 @@ public class InventoryPanel : MonoBehaviour
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null) canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
+        // Tooltip 默认必须隐藏。箱子有左右两个面板；如果右侧 Tooltip 在 Inspector 里默认启用，
+        // 它即使没被鼠标悬停调用，也会按自己的 RectTransform 位置显示在屏幕中央。
+        if (tooltipText != null)
+        {
+            tooltipText.enabled = false;
+            tooltipText.raycastTarget = false;
+        }
+
         EnsureGridLayoutGroup();
-        GenerateCells();
+        if (cellScripts == null) GenerateCells();   // 已被 SetStorage 生成过就跳过
     }
 
     private void Start()
@@ -57,7 +91,7 @@ public class InventoryPanel : MonoBehaviour
             EnsureGridLayoutGroup();
             GenerateCells();
         }
-        if (MainPanel == null) MainPanel = this;
+        if (claimMainPanel && MainPanel == null) MainPanel = this;
         Close();
     }
 
@@ -72,7 +106,7 @@ public class InventoryPanel : MonoBehaviour
         glg.startAxis = GridLayoutGroup.Axis.Horizontal;
         glg.childAlignment = TextAnchor.UpperLeft;
         glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        glg.constraintCount = InventoryManager.Instance?.Columns ?? 8;
+        glg.constraintCount = Storage?.Columns ?? 8;
     }
 
     // ============================================================
@@ -81,7 +115,7 @@ public class InventoryPanel : MonoBehaviour
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Tab))
+        if (allowTabToggle && Input.GetKeyDown(KeyCode.Tab))
             Toggle();
 
         if (isOpen && IsDragging && Input.GetKeyDown(KeyCode.R))
@@ -105,6 +139,8 @@ public class InventoryPanel : MonoBehaviour
         isOpen = true;
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;
+        // 背包/箱子左右面板都可以申请暂停；由 GamePauseManager 统一决定何时恢复。
+        GamePauseManager.Instance?.RequestPause(this);
         RefreshAllItems();
         StartCoroutine(PopInAnimation());
     }
@@ -114,6 +150,7 @@ public class InventoryPanel : MonoBehaviour
         isOpen = false;
         canvasGroup.alpha = 0f;
         canvasGroup.blocksRaycasts = false;
+        GamePauseManager.Instance?.ReleasePause(this);
     }
 
     // ============================================================
@@ -147,7 +184,8 @@ public class InventoryPanel : MonoBehaviour
         while (elapsed < duration)
         {
             if (t == null || !t.gameObject.activeInHierarchy) yield break;
-            elapsed += Time.deltaTime;
+            // 世界暂停时 Time.deltaTime 为 0；UI 动画要用真实时间继续播放。
+            elapsed += Time.unscaledDeltaTime;
             float x = Mathf.Clamp01(elapsed / duration);
             float s = 1f + 2.70158f * (x - 1f) * (x - 1f) * (x - 1f) + 1.70158f * (x - 1f) * (x - 1f);
             t.localScale = Vector3.one * Mathf.Clamp(s, 0f, 1.3f);
@@ -162,7 +200,7 @@ public class InventoryPanel : MonoBehaviour
 
     private void GenerateCells()
     {
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryManager inv = Storage;
         if (inv == null) return;
         foreach (Transform t in cellsContainer) Destroy(t.gameObject);
 
@@ -186,10 +224,13 @@ public class InventoryPanel : MonoBehaviour
 
     public void RefreshAllItems()
     {
+        // 防御：面板隐藏时别刷新——Instantiate 到隐藏容器里的物体 Awake 不执行，会 NRE
+        if (!gameObject.activeInHierarchy) return;
+
         foreach (Transform t in itemsContainer) Destroy(t.gameObject);
         if (cellScripts == null) return;
 
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryManager inv = Storage;
         if (inv == null) return;
 
         foreach (var kv in inv.AllSlots())
@@ -237,7 +278,7 @@ public class InventoryPanel : MonoBehaviour
         float step = cellSize + cellSpacing;
         col = Mathf.FloorToInt((local.x - topLeftX) / step);
         row = Mathf.FloorToInt((topLeftY - local.y) / step);
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryManager inv = Storage;
         if (inv == null) return false;
         return col >= 0 && col < inv.Columns && row >= 0 && row < inv.Rows;
     }
@@ -245,7 +286,7 @@ public class InventoryPanel : MonoBehaviour
     public void UpdateCellHighlight(int sx, int sy, int width, int height, bool canPlace)
     {
         if (cellScripts == null) return;
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryManager inv = Storage;
         if (inv == null) return;
         ClearAllHighlights();
         if (sx < 0 || sy < 0) return;
@@ -264,7 +305,7 @@ public class InventoryPanel : MonoBehaviour
     private InventoryGridCell GetCellSafe(int col, int row)
     {
         if (cellScripts == null) return null;
-        InventoryManager inv = InventoryManager.Instance;
+        InventoryManager inv = Storage;
         if (inv == null) return null;
         if (col < 0 || col >= inv.Columns || row < 0 || row >= inv.Rows) return null;
         return cellScripts[col, row];
@@ -278,6 +319,11 @@ public class InventoryPanel : MonoBehaviour
     {
         if (tooltipText == null) return;
         tooltipText.raycastTarget = false;
+
+        // UI 同一 Canvas 内按同级节点顺序绘制：最后一个兄弟节点在最上层。
+        // Tooltip 可能被装备图等后绘制的 UI 遮住，显示前把它提到当前父物体最前面。
+        tooltipText.transform.SetAsLastSibling();
+
         if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
         tooltipText.text = text;
         tooltipText.enabled = true;
@@ -293,7 +339,8 @@ public class InventoryPanel : MonoBehaviour
 
     private System.Collections.IEnumerator HideAfterDelay()
     {
-        yield return new WaitForSeconds(0.15f);
+        // 世界暂停时普通 WaitForSeconds 不会倒计时，Tooltip 要用真实时间隐藏。
+        yield return new WaitForSecondsRealtime(0.15f);
         if (tooltipText != null) { tooltipText.enabled = false; tooltipVisible = false; }
         hideRoutine = null;
     }

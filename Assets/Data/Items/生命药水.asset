@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b79639502d935a14b971f30ac4faae9e, type: 3}
+  m_Name: "\u751F\u547D\u836F\u6C34"
+  m_EditorClassIdentifier: 
+  itemName: "\u751F\u547D\u836F\u6C34"
+  icon: {fileID: 7482667652216324306, guid: 26da26c6887c843419ce25d7e87cbf7b, type: 3}
+  description: 
+  gridWidth: 1
+  gridHeight: 1
+  type: 5
+  skill: 0
+  skillDescription: 
+  healAmount: 30

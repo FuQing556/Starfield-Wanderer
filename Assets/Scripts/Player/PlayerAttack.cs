@@ -17,6 +17,9 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField, Range(1f, 360f)] private float meleeAngle = 100f; // 面前扇形的总角度
     [SerializeField] private float baseDamage = 15f;
     [SerializeField] private LayerMask enemyLayer;
+    [SerializeField] private GameObject meleeMagicEffectPrefab;
+    [SerializeField] private float meleeDamageDelay = 0.18f;
+    [SerializeField] private float meleeFireRate = 0.3f;
 
     [Header("远程（竞技场）")]
     [SerializeField] private GameObject bulletPrefab;      // 子弹 prefab（挂 Bullet 脚本）
@@ -27,6 +30,7 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] private float dashCooldown = 2f;      // CD 秒
 
     private float lastFireTime;
+    private float lastMeleeTime;
     /// <summary>
     /// 闪现 CD 进度：0=好了，1=刚用。SkillBarUI 读这个画蒙层。
     /// 没装备 BlinkDodge 时返回 0。
@@ -69,7 +73,7 @@ public class PlayerAttack : MonoBehaviour
             if (BattleManager.Instance != null && BattleManager.Instance.IsInBattle)
                 RangedAttack(GetMouseOrJoystickDir());
             else
-                MeleeAttack();
+                MeleeAttack(GetMouseOrJoystickDir());
         }
     }
 
@@ -99,7 +103,7 @@ public class PlayerAttack : MonoBehaviour
         if (BattleManager.Instance != null && BattleManager.Instance.IsInBattle)
             RangedAttack(GetMobileAimDir());
         else
-            MeleeAttack();
+            MeleeAttack(GetMobileMeleeDir());
     }
 
     /// <summary>
@@ -124,6 +128,18 @@ public class PlayerAttack : MonoBehaviour
         if (d != Vector2.zero) return -d;
 
         // 没搓 → 最后移动方向
+        return PlayerController.LastMoveDir;
+    }
+
+    /// <summary>
+    /// 手机大世界近距离法术方向：摇杆正方向；没有摇杆时取最后移动方向。
+    /// 和竞技场远程攻击的反方向瞄准刻意区分。
+    /// </summary>
+    private Vector2 GetMobileMeleeDir()
+    {
+        Vector2 d = VirtualJoystick.Direction;
+        if (d != Vector2.zero) return d;
+
         return PlayerController.LastMoveDir;
     }
 
@@ -175,13 +191,36 @@ public class PlayerAttack : MonoBehaviour
     // 近战（世界地图）
     // ============================================================
 
-    private void MeleeAttack()
+    private void MeleeAttack(Vector2 attackDirection)
     {
+        if (Time.time < lastMeleeTime + meleeFireRate)
+            return;
+
+        lastMeleeTime = Time.time;
+
+        Vector2 attackOrigin = transform.position;
+
+        // 特效一生成就不再属于玩家，玩家走开后它会原地消散。
+        if (meleeMagicEffectPrefab != null)
+        {
+            Vector3 effectPosition = attackOrigin + attackDirection.normalized * 0.3f;
+            GameObject effectObject = Instantiate(meleeMagicEffectPrefab, effectPosition, Quaternion.identity);
+            effectObject.GetComponent<MeleeMagicEffect>()?.Play(attackDirection);
+        }
+
+        StartCoroutine(DelayedMeleeDamage(attackOrigin, attackDirection));
+    }
+
+    /// <summary>
+    /// 短暂聚能后，在攻击开始时的位置结算伤害。
+    /// 玩家可以走开，判定不会跟着玩家漂移。
+    /// </summary>
+    private System.Collections.IEnumerator DelayedMeleeDamage(Vector2 attackOrigin, Vector2 attackDirection)
+    {
+        yield return new WaitForSeconds(meleeDamageDelay);
+
         // 第一步：圆形查询只负责找“附近候选”。
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, attackRange, enemyLayer);
-        Vector2 attackDirection = spriteAnimator != null
-            ? spriteAnimator.FacingDirection
-            : PlayerController.LastMoveDir;
+        Collider2D[] hits = Physics2D.OverlapCircleAll(attackOrigin, attackRange, enemyLayer);
 
         EnemyBase closestEnemy = null;
         Harvestable closestHarvest = null;
@@ -190,7 +229,7 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            Vector2 toTarget = hit.transform.position - transform.position;
+            Vector2 toTarget = (Vector2)hit.transform.position - attackOrigin;
             float dist = toTarget.magnitude;
 
             // 第二步：用夹角过滤候选，只保留角色面前扇形内的目标。
@@ -213,9 +252,9 @@ public class PlayerAttack : MonoBehaviour
         }
 
         if (closestEnemy != null)
-            closestEnemy.TakeDamage(baseDamage, transform.position);
+            closestEnemy.TakeDamage(baseDamage, attackOrigin);
         else if (closestHarvest != null)
-            closestHarvest.TakeDamage(baseDamage, transform.position);
+            closestHarvest.TakeDamage(baseDamage, attackOrigin);
     }
 
     // ============================================================

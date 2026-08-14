@@ -21,10 +21,12 @@ public class GatherableObject : MonoBehaviour, IInteractable
     }
 
     private SpriteRenderer spriteRenderer;
+    private SpriteVisualVariant spriteVisualVariant; // 可选的世界 Sprite 换色组件，由 ItemData 决定是否启用。
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteVisualVariant = GetComponent<SpriteVisualVariant>(); // 只读取 Prefab 上已有组件，不在代码里动态添加。
         // 没有 SpriteRenderer 就动态加一个——掉落物 prefab 可能没挂
         if (spriteRenderer == null)
             spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
@@ -42,12 +44,34 @@ public class GatherableObject : MonoBehaviour, IInteractable
 
     public void Initialize(ItemData data)
     {
+        if (data == null)
+        {
+            Debug.LogError($"[GatherableObject] {name} 初始化时收到空 ItemData。", this); // 避免后续读取图标时产生空引用。
+            return;
+        }
+
         itemData = data;
 
         if (data.icon != null)
             spriteRenderer.sprite = data.icon;
         else
             spriteRenderer.sprite = MakeColorSquare(ItemData.GetTypeColor(data.type));
+
+        if (data.visualVariant != null)
+        {
+            if (spriteVisualVariant == null)
+            {
+                Debug.LogError($"[GatherableObject] {name} 的 {data.itemName} 配置了视觉变体，但掉落 Prefab 没有 SpriteVisualVariant。", this); // 明确提示缺少的编辑器组件。
+            }
+            else
+            {
+                spriteVisualVariant.SetProfile(data.visualVariant); // 同一掉落 Prefab 根据 ItemData 自动显示成金矿或铁矿。
+            }
+        }
+        else if (spriteVisualVariant != null)
+        {
+            spriteVisualVariant.SetProfile(null); // 金矿等未配置变体的物品继续使用原图和原材质。
+        }
     }
 
     /// <summary>

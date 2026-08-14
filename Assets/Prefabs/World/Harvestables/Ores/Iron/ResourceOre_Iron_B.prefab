@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 43708014185299665}
   - component: {fileID: 5624559779642517683}
   - component: {fileID: 4231876813288294218}
+  - component: {fileID: 5656073612106222715}
   m_Layer: 3
   m_Name: ResourceOre_Iron_B
   m_TagString: Untagged
@@ -94,7 +95,7 @@ MonoBehaviour:
   remainDuration: 2
   fadeDuration: 1
   drops:
-  - {fileID: 11400000, guid: de7d53ae752e2294c8b5d65c45b77aaa, type: 2}
+  - {fileID: 11400000, guid: 78b8735d91e53d6449f4b17bc54e1c47, type: 2}
   droppedItemPrefab: {fileID: 7574101454326092067, guid: bde0e2df55da5bf4283e7d96ad0724ca, type: 3}
 --- !u!114 &5624559779642517683
 MonoBehaviour:
@@ -126,6 +127,19 @@ SortingGroup:
   m_SortingLayer: 3
   m_SortingOrder: -10
   m_SortAtRoot: 0
+--- !u!114 &5656073612106222715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5446014039567868765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c319fa0c251a5428fb9a6e1b4c0e5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  profile: {fileID: 11400000, guid: 0f467086d9bd0314087b289706f0f9ab, type: 2}
 --- !u!1 &6227988762298946497
 GameObject:
   m_ObjectHideFlags: 0

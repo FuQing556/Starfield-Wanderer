@@ -10,6 +10,7 @@ using UnityEngine.EventSystems;
 public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler, IPointerEnterHandler, IPointerExitHandler, IPointerClickHandler
 {
     [SerializeField] private Image iconImage;
+    [SerializeField] private ImageVisualVariant iconVisualVariant; // Icon 子物体上的可选换色组件，用于铁矿等视觉变体。
 
     private int slotID;
     private InventorySlot slot;
@@ -45,6 +46,15 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
 
         if (iconImage != null && s.itemData.icon != null)
             iconImage.sprite = s.itemData.icon;
+
+        if (iconVisualVariant != null)
+        {
+            iconVisualVariant.SetProfile(s.itemData.visualVariant); // 配置为空时组件会恢复普通 UI 材质，因此金矿不受影响。
+        }
+        else if (s.itemData.visualVariant != null)
+        {
+            Debug.LogError($"[InventoryItemUI] {s.itemData.itemName} 配置了视觉变体，但 UI_InventoryItem 没有绑定 ImageVisualVariant。", this); // 铁矿未换色时直接指出 Prefab 配置缺口。
+        }
 
         // 按物品类型染底色——有图标的半透明，没图标的更明显
         if (bgImage != null)

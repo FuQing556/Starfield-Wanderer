@@ -23,7 +23,7 @@ MonoBehaviour:
   - costItem: {fileID: 11400000, guid: bcc67cf6b2aa0f14da54e0efcacadffe, type: 2}
     costAmount: 3
     rewardItem: {fileID: 11400000, guid: bf704d4a9407e1f4f873b3d7d4eb60d6, type: 2}
-  - costItem: {fileID: 11400000, guid: 15fc9f7be297db3468b3023834f25337, type: 2}
+  - costItem: {fileID: 11400000, guid: 78b8735d91e53d6449f4b17bc54e1c47, type: 2}
     costAmount: 3
     rewardItem: {fileID: 11400000, guid: dc5aceed9a61c0e4ea70b45fb03a66bc, type: 2}
   - costItem: {fileID: 11400000, guid: 3ec333c4d766dae469791394871597b3, type: 2}

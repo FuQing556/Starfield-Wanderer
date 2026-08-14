@@ -65,7 +65,9 @@
     <Compile Include="Assets\Scripts\UI\ShopEntryUI.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryItemUI.cs" />
     <Compile Include="Assets\Scripts\Enemy\ArenaDeathHandler.cs" />
+    <Compile Include="Assets\Scripts\Visual\ImageVisualVariant.cs" />
     <Compile Include="Assets\Scripts\World\InteractableRegistry.cs" />
+    <Compile Include="Assets\Scripts\Visual\VisualVariantProfile.cs" />
     <Compile Include="Assets\Scripts\World\Chest.cs" />
     <Compile Include="Assets\Scripts\UI\EquipmentSlotUI.cs" />
     <Compile Include="Assets\Scripts\World\GatherableObject.cs" />
@@ -81,6 +83,7 @@
     <Compile Include="Assets\Scripts\Enemy\Movement\IMovementBehaviour.cs" />
     <Compile Include="Assets\Scripts\World\Harvestable.cs" />
     <Compile Include="Assets\Scripts\Enemy\Attack\MeleeAttack.cs" />
+    <Compile Include="Assets\Scripts\Visual\SpriteVisualVariant.cs" />
     <Compile Include="Assets\Scripts\Inventory\InventoryManager.cs" />
     <Compile Include="Assets\Scripts\Data\ItemTypeColors.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerController.cs" />
@@ -118,6 +121,10 @@
     <Compile Include="Assets\Scripts\Enemy\LootComponent.cs" />
     <Compile Include="Assets\Scripts\World\NPCBrain.cs" />
     <Compile Include="Assets\Scripts\Core\YSortGroup.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\Shaders\SpriteColorize.shader" />
+    <None Include="Assets\Shaders\UIColorize.shader" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

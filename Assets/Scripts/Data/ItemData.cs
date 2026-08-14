@@ -19,6 +19,9 @@ public class ItemData : ScriptableObject
 
     [Header("分类")]
     public ItemType type = ItemType.Material;
+
+    [Header("视觉变体（可选）")]
+    public VisualVariantProfile visualVariant; // 铁矿等复用其他素材的物品在这里绑定统一换色配置；普通物品留空。
     // ★ slot 不再手动选，从 type 自动推导：
     //   Weapon→Weapon槽  Helmet→Helmet槽  Armor→Armor槽  Accessory→Accessory槽
     //   其他类型（Material/Consumable）→None，不能装备

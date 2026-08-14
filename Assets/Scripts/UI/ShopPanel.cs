@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,6 +22,7 @@ public class ShopPanel : MonoBehaviour
     private ShopSlot[] shopSlots;  // 当前货物
     private string merchantName;   // （暂存，后续可能用到）
     private NPCBrain ownerNPC;     // 谁开的商店，谁负责关（不再满场景 FindObjectOfType）
+    private Coroutine feedbackRoutine; // 商店暂停世界后，提示仍使用真实时间正常消失。
 
     private void Awake()
     {
@@ -35,6 +37,7 @@ public class ShopPanel : MonoBehaviour
     /// </summary>
     public void Initialize(NPCBrain npc, string name, ShopSlot[] slots)
     {
+        GamePauseManager.Instance?.RequestPause(this); // 商店打开期间暂停移动、攻击、物理与世界动画。
         ownerNPC = npc;
         merchantName = name;
         shopSlots = slots;
@@ -133,19 +136,32 @@ public class ShopPanel : MonoBehaviour
         if (feedbackText != null)
         {
             feedbackText.text = msg;
-            // 2 秒后自动清除
-            CancelInvoke(nameof(ClearFeedback));
-            Invoke(nameof(ClearFeedback), 2f);
+            if (feedbackRoutine != null)
+                StopCoroutine(feedbackRoutine); // 连续购买时，从最新提示重新开始倒计时。
+            feedbackRoutine = StartCoroutine(ClearFeedbackAfterDelay());
         }
     }
 
-    private void ClearFeedback()
+    private IEnumerator ClearFeedbackAfterDelay()
     {
+        yield return new WaitForSecondsRealtime(2f); // Time.timeScale 为 0 时仍然计时。
         if (feedbackText != null) feedbackText.text = "";
+        feedbackRoutine = null;
     }
 
     private void OnLeave()
     {
         ownerNPC?.CloseShop();
+    }
+
+    private void OnDisable()
+    {
+        GamePauseManager.Instance?.ReleasePause(this); // 无论按钮、NPC 还是场景切换关店，都恢复本面板持有的暂停。
+
+        if (feedbackRoutine != null)
+        {
+            StopCoroutine(feedbackRoutine);
+            feedbackRoutine = null;
+        }
     }
 }

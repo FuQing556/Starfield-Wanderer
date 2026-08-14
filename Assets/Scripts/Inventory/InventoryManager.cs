@@ -156,26 +156,43 @@ public class InventoryManager : MonoBehaviour
         InventorySlot slot = GetSlot(slotID);
         if (slot?.itemData == null) return;
 
-        // 先从背包移除
+        // 先验证世界掉落 Prefab。配置失效时保留背包物品，绝不能静默吞掉玩家资产。
+        if (droppedItemPrefab == null)
+        {
+            Debug.LogError(
+                $"[InventoryManager] 无法丢弃 {slot.itemData.itemName}：Dropped Item Prefab 未配置或引用已经失效。背包物品已保留。",
+                this);
+            GameHUD.Instance?.ShowToast("世界掉落物未配置，物品已保留！", 2f);
+            return;
+        }
+
+        GatherableObject prefabGatherable = droppedItemPrefab.GetComponent<GatherableObject>();
+        if (prefabGatherable == null)
+        {
+            Debug.LogError(
+                $"[InventoryManager] 无法丢弃 {slot.itemData.itemName}：{droppedItemPrefab.name} 没有 GatherableObject。背包物品已保留。",
+                droppedItemPrefab);
+            GameHUD.Instance?.ShowToast("掉落 Prefab 配置错误，物品已保留！", 2f);
+            return;
+        }
+
+        // 在玩家周围随机偏移一点，避免多个物品完全叠在一起。
+        Vector3 offset = new Vector3(
+            Random.Range(-0.5f, 0.5f),
+            Random.Range(-0.3f, 0.3f),
+            0f);
+
+        GameObject obj = Instantiate(droppedItemPrefab, worldPosition + offset, Quaternion.identity);
+        obj.name = $"掉落_{slot.itemData.itemName}";
+
+        // Prefab 已经验证过组件；实例初始化成功后，才正式从背包移除物品。
+        GatherableObject gatherable = obj.GetComponent<GatherableObject>();
+        gatherable.Initialize(slot.itemData);
         RemoveItem(slotID);
 
-        // 在场景里生成掉落物
-        if (droppedItemPrefab != null)
-        {
-            // 在玩家周围随机偏移一点，避免多个物品叠在一起
-            Vector3 offset = new Vector3(
-                Random.Range(-0.5f, 0.5f),
-                Random.Range(-0.3f, 0.3f),
-                0f);
-            GameObject obj = Instantiate(droppedItemPrefab, worldPosition + offset, Quaternion.identity);
-            obj.name = $"掉落_{slot.itemData.itemName}";
-
-            // 确保有 GatherableObject——prefab 上可能没挂
-            GatherableObject g = obj.GetComponent<GatherableObject>();
-            if (g == null)
-                g = obj.AddComponent<GatherableObject>();
-            g.Initialize(slot.itemData);
-        }
+        Debug.Log(
+            $"[InventoryDrop] 已生成 {obj.name}，位置 {obj.transform.position}。",
+            obj);
     }
 
     /// <summary>
@@ -382,4 +399,3 @@ public class InventorySlot
     public int Width => rotated ? itemData.gridHeight : itemData.gridWidth;
     public int Height => rotated ? itemData.gridWidth : itemData.gridHeight;
 }
-

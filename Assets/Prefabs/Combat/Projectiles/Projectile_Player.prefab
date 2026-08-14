@@ -76,7 +76,7 @@ SpriteRenderer:
   m_SortingLayerID: 1330413805
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 1d227ad77aabf3e47927a60856b510dc, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -105,6 +105,7 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 8
+  impactPrefab: {fileID: 6998322387709596675, guid: 0d9a8498260164647baf595a5385b03b, type: 3}
 --- !u!58 &8729325487459239797
 CircleCollider2D:
   m_ObjectHideFlags: 0

@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 9172726543927094706}
   - component: {fileID: 4001986833789110505}
   - component: {fileID: 8685195983642844837}
+  - component: {fileID: 8835097974427330743}
   m_Layer: 0
   m_Name: DroppedResourceItem
   m_TagString: Untagged
@@ -134,3 +135,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   itemData: {fileID: 0}
+  lingerAfterGather: 0
+  remainDuration: 2
+  fadeDuration: 1
+  gatherAnimator: {fileID: 0}
+--- !u!114 &8835097974427330743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7574101454326092067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a6c319fa0c251a5428fb9a6e1b4c0e5a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  profile: {fileID: 0}

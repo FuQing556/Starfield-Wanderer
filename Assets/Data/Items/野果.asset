@@ -10,13 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b79639502d935a14b971f30ac4faae9e, type: 3}
-  m_Name: "\u94C1\u7532"
+  m_Name: "\u91CE\u679C"
   m_EditorClassIdentifier: 
-  itemName: "\u94C1\u7532"
-  icon: {fileID: 0}
+  itemName: "\u91CE\u679C"
+  icon: {fileID: 21300000, guid: 1a75f772b99b125468d9f5f117af61fb, type: 3}
   description: 
-  gridWidth: 2
-  gridHeight: 2
-  type: 3
-  skill: 3
+  gridWidth: 1
+  gridHeight: 1
+  type: 5
+  rarity: 2
+  visualVariant: {fileID: 0}
+  skill: 0
   skillDescription: 
+  consumableEffect: 1
+  healAmount: 0
+  moveSpeedMultiplier: 1.5
+  effectDuration: 10

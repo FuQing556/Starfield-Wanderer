@@ -18,6 +18,11 @@ MonoBehaviour:
   gridWidth: 1
   gridHeight: 1
   type: 0
+  rarity: 2
+  visualVariant: {fileID: 0}
   skill: 0
   skillDescription: 
+  consumableEffect: 0
   healAmount: 0
+  moveSpeedMultiplier: 1.25
+  effectDuration: 120

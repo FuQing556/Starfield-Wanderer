@@ -56,11 +56,11 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
             Debug.LogError($"[InventoryItemUI] {s.itemData.itemName} 配置了视觉变体，但 UI_InventoryItem 没有绑定 ImageVisualVariant。", this); // 铁矿未换色时直接指出 Prefab 配置缺口。
         }
 
-        // 按物品类型染底色——有图标的半透明，没图标的更明显
+        // 按物品品质染背包底色——品质与材料/装备等物品类型相互独立。
         if (bgImage != null)
         {
             float alpha = (s.itemData.icon != null) ? 0.35f : 0.75f;
-            Color c = ItemData.GetTypeColor(s.itemData.type);
+            Color c = ItemData.GetRarityColor(s.itemData.rarity);
             c.a = alpha;
             bgImage.color = c;
         }
@@ -276,13 +276,51 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         if (slot?.itemData == null) return;
         if (slot.itemData.type != ItemType.Consumable) return;
 
-        // 回血
         GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        if (player == null)
         {
-            PlayerHealth ph = player.GetComponent<PlayerHealth>();
-            if (ph != null)
-                ph.Heal(slot.itemData.healAmount);
+            Debug.LogError($"[InventoryItemUI] 使用 {slot.itemData.itemName} 时找不到 Player。", this);
+            return; // 效果没有成功应用时不能消耗物品。
+        }
+
+        switch (slot.itemData.consumableEffect)
+        {
+            case ConsumableEffectType.Heal:
+            {
+                PlayerHealth playerHealth = player.GetComponent<PlayerHealth>();
+                if (playerHealth == null)
+                {
+                    Debug.LogError($"[InventoryItemUI] {slot.itemData.itemName} 是回血消耗品，但 Player 没有 PlayerHealth。", player);
+                    return;
+                }
+
+                playerHealth.Heal(slot.itemData.healAmount);
+                Debug.Log($"[InventoryItemUI] 使用 {slot.itemData.itemName}，回复 {slot.itemData.healAmount} 点生命。", this);
+                break;
+            }
+
+            case ConsumableEffectType.MoveSpeedBuff:
+            {
+                PlayerBuffController buffController = player.GetComponent<PlayerBuffController>();
+                if (buffController == null)
+                {
+                    Debug.LogError($"[InventoryItemUI] {slot.itemData.itemName} 是移速消耗品，但 Player 没有 PlayerBuffController。", player);
+                    return; // 缺组件时保留野果，避免玩家无效果却损失物品。
+                }
+
+                buffController.ApplyMoveSpeedBuff(
+                    slot.itemData.moveSpeedMultiplier,
+                    slot.itemData.effectDuration);
+
+                Debug.Log(
+                    $"[InventoryItemUI] 使用 {slot.itemData.itemName}，移速 ×{slot.itemData.moveSpeedMultiplier:F2}，持续 {slot.itemData.effectDuration:F1} 秒。",
+                    this);
+                break;
+            }
+
+            default:
+                Debug.LogError($"[InventoryItemUI] {slot.itemData.itemName} 配置了未知消耗品效果。", slot.itemData);
+                return;
         }
 
         // 从背包/箱子移除（用所在面板绑定的仓库）
@@ -293,7 +331,6 @@ public class InventoryItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, I
         // 刷新面板
         panel?.RefreshAllItems();
 
-        Debug.Log($"[InventoryItemUI] 使用消耗品：{slot.itemData.itemName}，回复 {slot.itemData.healAmount} 血");
     }
 
     // ============================================================

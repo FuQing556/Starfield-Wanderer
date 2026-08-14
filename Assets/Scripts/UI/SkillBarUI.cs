@@ -14,6 +14,7 @@ public class SkillBarUI : MonoBehaviour
     [SerializeField] private Sprite armorSprite;
     [SerializeField] private Sprite blinkSprite;
     [SerializeField] private Sprite doubleShotSprite;
+    [SerializeField] private Sprite moveSpeedSprite; // 野果移速 Buff 图标；正式图片完成前可先拖入白色 Square。
 
     [Header("布局")]
     [SerializeField] private float iconSize = 36f;
@@ -21,6 +22,7 @@ public class SkillBarUI : MonoBehaviour
     [SerializeField] private Color cooldownOverlay = new Color(0, 0, 0, 0.6f);
 
     private PlayerAttack playerAttack;
+    private PlayerBuffController buffController; // 读取野果移速 Buff 的剩余时间和显示状态。
     private readonly Dictionary<string, IconEntry> activeIcons = new();
 
     private struct IconEntry
@@ -32,6 +34,7 @@ public class SkillBarUI : MonoBehaviour
     private void Start()
     {
         playerAttack = FindObjectOfType<PlayerAttack>();
+        buffController = FindObjectOfType<PlayerBuffController>();
     }
 
     private void Update()
@@ -39,7 +42,7 @@ public class SkillBarUI : MonoBehaviour
         if (playerAttack == null) return;
 
         // 收集当前激活的 buff（有序）
-        var buffs = new List<(string key, Sprite sprite, bool isBlink, float cdRatio)>();
+        var buffs = new List<(string key, Sprite sprite, bool hasOverlay, float overlayRatio)>();
 
         if (playerAttack.HasSkill(SkillType.ScatterShot))
             buffs.Add(("scatter", scatterSprite, false, 0f));
@@ -57,9 +60,16 @@ public class SkillBarUI : MonoBehaviour
         if (playerAttack.HasDoubleShotBuff)
             buffs.Add(("doubleshot", doubleShotSprite, false, 0f));
 
+        // 野果移速 Buff：开始时黑幕为 0，剩余时间越少，黑幕覆盖得越多。
+        if (buffController != null && buffController.HasMoveSpeedBuff)
+        {
+            float elapsedRatio = 1f - buffController.MoveSpeedBuffRemainingRatio;
+            buffs.Add(("movespeed", moveSpeedSprite, true, elapsedRatio));
+        }
+
         // 同步图标
         HashSet<string> currentKeys = new();
-        foreach (var (key, sprite, isBlink, cdRatio) in buffs)
+        foreach (var (key, sprite, hasOverlay, overlayRatio) in buffs)
         {
             currentKeys.Add(key);
 
@@ -67,7 +77,7 @@ public class SkillBarUI : MonoBehaviour
             {
                 // 更新已有：只更新 CD 蒙层
                 if (entry.cdOverlay != null)
-                    entry.cdOverlay.fillAmount = cdRatio;
+                    entry.cdOverlay.fillAmount = overlayRatio;
             }
             else
             {
@@ -80,9 +90,9 @@ public class SkillBarUI : MonoBehaviour
                 img.sprite = sprite;
                 img.rectTransform.sizeDelta = new Vector2(iconSize, iconSize);
 
-                // CD 蒙层（仅 blink）
+                // 时间蒙层：闪现显示冷却剩余，临时 Buff 显示已经流逝的时间。
                 Image overlayImg = null;
-                if (isBlink)
+                if (hasOverlay)
                 {
                     GameObject ov = new GameObject("CD");
                     ov.transform.SetParent(go.transform);
@@ -94,7 +104,7 @@ public class SkillBarUI : MonoBehaviour
                     overlayImg.type = Image.Type.Filled;
                     overlayImg.fillMethod = Image.FillMethod.Vertical;
                     overlayImg.fillOrigin = 1; // Top
-                    overlayImg.fillAmount = cdRatio;
+                    overlayImg.fillAmount = overlayRatio;
                     overlayImg.rectTransform.sizeDelta = new Vector2(iconSize, iconSize);
                 }
 

@@ -13,11 +13,16 @@ MonoBehaviour:
   m_Name: "\u751F\u547D\u836F\u6C34"
   m_EditorClassIdentifier: 
   itemName: "\u751F\u547D\u836F\u6C34"
-  icon: {fileID: 7482667652216324306, guid: 26da26c6887c843419ce25d7e87cbf7b, type: 3}
+  icon: {fileID: 21300000, guid: 6b0ddbb248d2f7345a73910ea3c1eb19, type: 3}
   description: 
   gridWidth: 1
   gridHeight: 1
   type: 5
+  rarity: 2
+  visualVariant: {fileID: 0}
   skill: 0
   skillDescription: 
+  consumableEffect: 0
   healAmount: 30
+  moveSpeedMultiplier: 1.25
+  effectDuration: 120

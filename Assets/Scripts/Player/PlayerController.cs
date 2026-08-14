@@ -22,12 +22,14 @@ public class PlayerController : MonoBehaviour
 
     private Rigidbody2D rb;
     private PlayerHealth playerHealth;
+    private PlayerBuffController buffController; // 可选的玩家 Buff 组件，负责提供最终移速倍率。
     private Vector2 movement;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         playerHealth = GetComponent<PlayerHealth>();
+        buffController = GetComponent<PlayerBuffController>(); // 只读取 Inspector 中已有组件，不在代码里动态添加。
         // 锁定 Z 轴旋转，防止碰撞导致角色转起来
         rb.constraints = RigidbodyConstraints2D.FreezeRotation;
     }
@@ -62,9 +64,13 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        float speedMultiplier = buffController != null
+            ? buffController.MoveSpeedMultiplier
+            : 1f; // 旧 Player Prefab 尚未挂 Buff 组件时保持原速度，避免破坏现有场景。
+
         // 在 FixedUpdate 中移动刚体（物理一致，不受帧率影响）
         rb.velocity = playerHealth != null && playerHealth.IsDead
             ? Vector2.zero
-            : movement * moveSpeed; // Unity 2022 用 velocity，2023+ 才叫 linearVelocity
+            : movement * moveSpeed * speedMultiplier; // Unity 2022 用 velocity，2023+ 才叫 linearVelocity
     }
 }

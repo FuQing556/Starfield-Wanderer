@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 世界里的可采集物——草药、花、蘑菇、掉落物品等。
-/// 玩家靠近 → HUD 显示提示 → 按 F 采集进背包。
+/// 玩家靠近 → HUD 显示提示 → 鼠标右键采集进背包。
 /// 需要 Trigger Collider2D。
 /// </summary>
 public class GatherableObject : MonoBehaviour, IInteractable
@@ -12,7 +12,7 @@ public class GatherableObject : MonoBehaviour, IInteractable
 
     private bool playerInRange;
 
-    public string Prompt => itemData != null ? $"按 F 采集 {itemData.itemName}" : "按 F 采集";
+    public string Prompt => itemData != null ? $"鼠标右键 采集 {itemData.itemName}" : "鼠标右键 采集";
     public bool IsInRange => playerInRange;
 
     public void Interact()

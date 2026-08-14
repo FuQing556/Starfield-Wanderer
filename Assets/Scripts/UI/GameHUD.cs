@@ -10,7 +10,7 @@ public class GameHUD : MonoBehaviour
     public static GameHUD Instance { get; private set; }
 
     [Header("提示文字（屏幕固定位置）")]
-    [SerializeField] private Text promptText;   // 比如 "按 F 采集 药草"
+    [SerializeField] private Text promptText;   // 比如 "鼠标右键 采集 药草"
 
     [Header("弹字（屏幕中上，渐隐消失）")]
     [SerializeField] private Text toastText;    // 比如 "背包已满！"

@@ -229,21 +229,29 @@ public class PlayerAttack : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            Vector2 toTarget = (Vector2)hit.transform.position - attackOrigin;
+            // 用碰撞体离玩家最近的点，而不是物体根节点来判断方向和距离。
+            // 树、矿石等资源的根节点通常在脚底，和真正可命中的位置相差很远。
+            Vector2 targetPoint = hit.ClosestPoint(attackOrigin);
+            Vector2 toTarget = targetPoint - attackOrigin;
             float dist = toTarget.magnitude;
 
             // 第二步：用夹角过滤候选，只保留角色面前扇形内的目标。
-            if (dist <= 0.001f || Vector2.Angle(attackDirection, toTarget) > meleeAngle * 0.5f)
+            // 玩家已经贴进碰撞体时 ClosestPoint 会返回攻击原点，此时应当直接视为命中，
+            // 不能像旧逻辑那样因为距离接近 0 而把目标跳过。
+            bool overlapsAttackOrigin = dist <= 0.001f;
+            if (!overlapsAttackOrigin
+                && Vector2.Angle(attackDirection, toTarget) > meleeAngle * 0.5f)
                 continue;
 
-            EnemyBase enemy = hit.GetComponent<EnemyBase>();
+            // 兼容碰撞体放在子物体、受伤组件放在根物体的 prefab 结构。
+            EnemyBase enemy = hit.GetComponentInParent<EnemyBase>();
             if (enemy != null && dist < closestEnemyDist)
             {
                 closestEnemyDist = dist;
                 closestEnemy = enemy;
             }
 
-            Harvestable harvest = hit.GetComponent<Harvestable>();
+            Harvestable harvest = hit.GetComponentInParent<Harvestable>();
             if (harvest != null && dist < closestHarvestDist)
             {
                 closestHarvestDist = dist;

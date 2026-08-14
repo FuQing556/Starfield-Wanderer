@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// 世界里的储物箱——按 F 打开，出现"左背包 + 右箱子"双面板。
+/// 世界里的储物箱——鼠标右键打开，出现“左背包 + 右箱子”双面板。
 /// 挂在箱子物体上。需要 Collider2D。
 /// 存储是箱子自己的 InventoryManager 实例（isPlayer 不勾，不抢玩家全局）。
 /// </summary>
@@ -20,7 +20,7 @@ public class Chest : MonoBehaviour, IInteractable
     private Transform player;
     private bool playerInRange;
 
-    public string Prompt => "按 F 打开箱子";
+    public string Prompt => "鼠标右键 打开箱子";
     public bool IsInRange => playerInRange;
 
     private void Awake()

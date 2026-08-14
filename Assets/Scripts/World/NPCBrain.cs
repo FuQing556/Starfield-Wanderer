@@ -21,7 +21,7 @@ public class NPCBrain : MonoBehaviour, IInteractable
 
     private Transform player;
     private bool playerInRange;
-    public string Prompt => "按 F 对话";
+    public string Prompt => "鼠标右键 对话";
     public bool IsInRange => playerInRange;
 
     private bool isTalking;
@@ -112,7 +112,7 @@ public class NPCBrain : MonoBehaviour, IInteractable
         if (data.shopSlots == null || data.shopSlots.Length == 0)
         {
             // 没商店 → 对话结束就完了，提示重新对话
-            if (playerInRange) GameHUD.Instance?.ShowPrompt($"按 F 对话");
+            if (playerInRange) GameHUD.Instance?.ShowPrompt("鼠标右键 对话");
             return;
         }
 
@@ -130,7 +130,7 @@ public class NPCBrain : MonoBehaviour, IInteractable
     {
         shopOpened = false;
         if (shopPanel != null) shopPanel.SetActive(false);
-        if (playerInRange) GameHUD.Instance?.ShowPrompt($"按 F 对话");
+        if (playerInRange) GameHUD.Instance?.ShowPrompt("鼠标右键 对话");
     }
 
     private void CloseAll()

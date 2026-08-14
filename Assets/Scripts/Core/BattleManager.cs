@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 
 /// <summary>
 /// 战斗管理器——波次制竞技场。
@@ -12,7 +13,10 @@ public class BattleManager : MonoBehaviour
 
     [Header("竞技场")]
     [SerializeField] private Transform arenaCenter;
+    // 旧的单敌人入口保留：已有场景不需要重新拖引用，仍可正常出怪。
     [SerializeField] private GameObject arenaEnemyPrefab;
+    // 新入口：填入多个竞技场敌人 prefab 后，每只怪会从列表中随机挑选。
+    [SerializeField] private List<GameObject> arenaEnemyPrefabs = new List<GameObject>();
     [SerializeField] private float scatterRadius = 4f;
 
     [Header("波次")]
@@ -143,13 +147,16 @@ public class BattleManager : MonoBehaviour
     {
         WriteLog($"  🌊 第 {waveCount + 1} 波！生成 {enemiesThisWave} 个敌人");
 
-        if (arenaEnemyPrefab != null)
+        // 优先使用多敌人列表；列表为空时退回旧的单敌人配置。
+        List<GameObject> validPrefabs = GetValidArenaEnemyPrefabs();
+        if (validPrefabs.Count > 0)
         {
             for (int i = 0; i < enemiesThisWave; i++)
             {
                 Vector2 offset = Random.insideUnitCircle * scatterRadius;
                 Vector3 spawnPos = arenaCenter.position + new Vector3(offset.x, offset.y, 0);
-                GameObject enemy = Instantiate(arenaEnemyPrefab, spawnPos, Quaternion.identity);
+                GameObject selectedPrefab = validPrefabs[Random.Range(0, validPrefabs.Count)];
+                GameObject enemy = Instantiate(selectedPrefab, spawnPos, Quaternion.identity);
 
                 // ★ 背刺入战：所有竞技场怪初始半血（半血对"打得更快"有真实意义）
                 if (backstabBattle)
@@ -165,6 +172,26 @@ public class BattleManager : MonoBehaviour
 
         // 屏幕弹字 "第 2/3 波"
         GameHUD.Instance?.ShowToast($"第 {waveCount + 1}/{maxWaves} 波", 2.5f);
+    }
+
+    /// <summary>
+    /// 整理 Inspector 中可用的竞技场敌人。
+    /// 保留旧字段作为兜底，避免旧场景在升级后失去敌人引用。
+    /// </summary>
+    private List<GameObject> GetValidArenaEnemyPrefabs()
+    {
+        List<GameObject> validPrefabs = new List<GameObject>();
+
+        foreach (GameObject prefab in arenaEnemyPrefabs)
+        {
+            if (prefab != null)
+                validPrefabs.Add(prefab);
+        }
+
+        if (validPrefabs.Count == 0 && arenaEnemyPrefab != null)
+            validPrefabs.Add(arenaEnemyPrefab);
+
+        return validPrefabs;
     }
 
     // ============================================================
@@ -217,11 +244,12 @@ public class BattleManager : MonoBehaviour
 
         triggeringEnemy = null;
 
-        // 清理竞技场敌人（有 RangedAttack 的 EnemyBase = 竞技场怪）
+        // 清理竞技场敌人。ArenaDeathHandler 是竞技场专用标记；
+        // 不再依赖 RangedAttack，纯近战剑士也会被正确清理。
         foreach (var eb in FindObjectsOfType<EnemyBase>())
         {
-            RangedAttack ra = eb.GetComponent<RangedAttack>();
-            if (ra != null) Destroy(eb.gameObject);
+            ArenaDeathHandler arenaDeathHandler = eb.GetComponent<ArenaDeathHandler>();
+            if (arenaDeathHandler != null) Destroy(eb.gameObject);
         }
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");

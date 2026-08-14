@@ -128,28 +128,27 @@ public class EnemyBase : MonoBehaviour, IDamageable
                     break;
                 }
 
-                chaseMovement?.Tick(this);
+                bool meleeInRange = meleeAttack != null && meleeAttack.IsInRange(this, player);
+                bool rangedInRange = rangedAttack != null && rangedAttack.IsInRange(this, player);
 
-                // 远程攻击：竞技场怪在追击时射击
-                if (meleeAttack == null && rangedAttack != null
-                    && rangedAttack.IsInRange(this, player))
+                if (meleeInRange || rangedInRange)
                 {
-                    rangedAttack.Tick(this, player);
-                }
-
-                // 近战：距离够近切 Attack
-                if (meleeAttack != null && meleeAttack.IsInRange(this, player))
-                {
+                    rb.velocity = Vector2.zero;
+                    if (player != null)
+                        UpdateFacing(player.position.x - transform.position.x);
                     State = EnemyState.Attack;
+                    break;
                 }
-                else if (meleeAttack == null && rangedAttack == null && player != null)
-                {
-                    // 既没近战也没远程 → 纯追人（被呼唤的巡逻怪）
-                }
+
+                chaseMovement?.Tick(this);
                 break;
 
             case EnemyState.Attack:
-                // 不移动，专注攻击
+                // Every attack owns a complete animation timeline. Never slide while attacking.
+                rb.velocity = Vector2.zero;
+                if (player != null)
+                    UpdateFacing(player.position.x - transform.position.x);
+
                 if (meleeAttack != null)
                 {
                     if (vision != null && vision.HasLostPlayer())
@@ -158,17 +157,29 @@ public class EnemyBase : MonoBehaviour, IDamageable
                         rb.velocity = Vector2.zero;
                         State = EnemyState.ReturnToSpawn;
                     }
-                    else if (!meleeAttack.IsInRange(this, player))
+                    else if (vision != null && !meleeAttack.IsInRange(this, player))
                     {
                         // 世界怪刚抬手、玩家又跑开：取消本次入战前摇，继续追击。
-                        vision?.CancelArenaWindup();
-                        State = EnemyState.Chase; // 玩家跑了
+                        vision.CancelArenaWindup();
+                        State = EnemyState.Chase;
                     }
                     // 有 VisionComponent 的是世界战斗触发器：只做前摇，绝不在野外扣玩家血。
                     else if (vision != null)
-                        vision.TryStartArenaBattle(meleeAttack.Windup);
+                        vision.TryStartArenaBattle(meleeAttack.WorldBattleDelay);
                     else
+                    {
                         meleeAttack.Tick(this, player);
+
+                        if (!meleeAttack.IsAttacking && !meleeAttack.IsInRange(this, player))
+                            State = EnemyState.Chase;
+                    }
+                }
+                else if (rangedAttack != null)
+                {
+                    rangedAttack.Tick(this, player);
+
+                    if (!rangedAttack.IsAttacking && !rangedAttack.IsInRange(this, player))
+                        State = EnemyState.Chase;
                 }
                 else
                 {

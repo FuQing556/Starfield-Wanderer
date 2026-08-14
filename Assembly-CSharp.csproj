@@ -63,6 +63,7 @@
     <Compile Include="Assets\Scripts\Player\MeleeMagicEffect.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSpriteAnimator.cs" />
     <Compile Include="Assets\Scripts\UI\ShopEntryUI.cs" />
+    <Compile Include="Assets\Scripts\Enemy\EnemySpriteAnimator.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryItemUI.cs" />
     <Compile Include="Assets\Scripts\Enemy\ArenaDeathHandler.cs" />
     <Compile Include="Assets\Scripts\Visual\ImageVisualVariant.cs" />
@@ -71,6 +72,7 @@
     <Compile Include="Assets\Scripts\World\Chest.cs" />
     <Compile Include="Assets\Scripts\UI\EquipmentSlotUI.cs" />
     <Compile Include="Assets\Scripts\World\GatherableObject.cs" />
+    <Compile Include="Assets\Scripts\Player\PlayerBuffController.cs" />
     <Compile Include="Assets\Scripts\UI\VirtualJoystick.cs" />
     <Compile Include="Assets\Scripts\UI\ShopPanel.cs" />
     <Compile Include="Assets\Scripts\Data\NPCData.cs" />
@@ -100,6 +102,7 @@
     <Compile Include="Assets\Scripts\UI\ChestUI.cs" />
     <Compile Include="Assets\Scripts\Enemy\Movement\ChaseMovement.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerAttack.cs" />
+    <Compile Include="Assets\Scripts\Data\ItemRarityColors.cs" />
     <Compile Include="Assets\Scripts\Core\DebugDump.cs" />
     <Compile Include="Assets\Scripts\Data\EnemyData.cs" />
     <Compile Include="Assets\Scripts\Player\DeathShadowEffect.cs" />
@@ -115,6 +118,7 @@
     <Compile Include="Assets\Scripts\Player\DashDustEffect.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryGridCell.cs" />
     <Compile Include="Assets\Scripts\UI\InventoryPanel.cs" />
+    <Compile Include="Assets\Scripts\Visual\AutoDestroyVfx.cs" />
     <Compile Include="Assets\Scripts\UI\PlayerHealthUI.cs" />
     <Compile Include="Assets\Scripts\Data\ItemData.cs" />
     <Compile Include="Assets\Scripts\Enemy\Attack\RangedAttack.cs" />

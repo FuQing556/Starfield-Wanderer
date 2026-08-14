@@ -1,96 +1,119 @@
+using System;
 using UnityEngine;
 
 /// <summary>
-/// 近战攻击 — 前摇 + 冷却 + 造成伤害。
-/// 挂世界巡逻怪上。需要 EnemyBase + HealthComponent 在同一 GameObject。
+/// Melee attack timeline. The animation starts first, damage is applied on its hit frame,
+/// and the enemy remains stationary until the clip has finished.
 /// </summary>
 public class MeleeAttack : MonoBehaviour, IAttackBehaviour
 {
-    [SerializeField] private float range = 1.5f;
-    [SerializeField] private float windup = 0.4f;      // 抬手时间
-    [SerializeField] private float cooldown = 1.5f;     // 攻击间隔
-    [SerializeField] private float damage = 10f;
-    [SerializeField] private float backstabAngle = 60f;
-    [SerializeField] private float backstabMultiplier = 2f;
+    [SerializeField, Min(0.01f)] private float range = 1.5f;
+    [SerializeField, Min(0.01f)] private float fallbackWindup = 0.4f;
+    [SerializeField, Min(0f)] private float cooldown = 1.5f;
+    [SerializeField, Min(0f)] private float damage = 10f;
+    [SerializeField, Range(0f, 1f)] private float hitNormalizedTime = 0.5f;
+    [SerializeField, Min(0f)] private float worldBattleDelayAfterHit = 2f / 12f;
 
-    private float windupTimer;
+    private float attackElapsed;
     private float cooldownTimer;
-    private bool isWindingUp;
+    private bool actionApplied;
     private HealthComponent health;
+    private EnemySpriteAnimator spriteAnimator;
 
-    /// <summary>近战命中距离。世界怪追击时需要走进这个距离才开始“入战前摇”。</summary>
+    public event Action OnAttackStarted;
+
     public float Range => range;
-
-    /// <summary>攻击前摇时长。世界怪复用它作为进入竞技场前的等待时间。</summary>
-    public float Windup => windup;
+    public bool IsAttacking { get; private set; }
+    public float AttackDuration => spriteAnimator != null
+        ? spriteAnimator.AttackDuration
+        : Mathf.Max(0.01f, fallbackWindup);
+    public float ActionDelay => AttackDuration * hitNormalizedTime;
+    public float WorldBattleDelay => Mathf.Min(
+        AttackDuration, ActionDelay + worldBattleDelayAfterHit);
 
     private void Awake()
     {
         health = GetComponent<HealthComponent>();
+        spriteAnimator = GetComponent<EnemySpriteAnimator>();
 
-        EnemyBase eb = GetComponent<EnemyBase>();
-        if (eb != null && eb.Data != null)
+        EnemyBase enemy = GetComponent<EnemyBase>();
+        if (enemy != null && enemy.Data != null)
         {
-            range              = eb.Data.attackRange;
-            windup             = eb.Data.attackWindup;
-            cooldown           = eb.Data.attackCooldown;
-            damage             = eb.Data.attackDamage;
-            backstabAngle      = eb.Data.backstabAngle;
-            backstabMultiplier = eb.Data.backstabMultiplier;
+            range = enemy.Data.attackRange;
+            fallbackWindup = enemy.Data.attackWindup;
+            cooldown = enemy.Data.attackCooldown;
+            damage = enemy.Data.attackDamage;
+            hitNormalizedTime = enemy.Data.meleeHitNormalizedTime;
+            worldBattleDelayAfterHit = enemy.Data.worldBattleDelayAfterHit;
         }
     }
 
     public bool IsInRange(EnemyBase enemy, Transform target)
     {
-        if (target == null) return false;
+        if (enemy == null || target == null) return false;
         return Vector2.Distance(enemy.transform.position, target.position) <= range;
     }
 
     public void Tick(EnemyBase enemy, Transform target)
     {
-        if (target == null || health == null || health.IsDead) return;
+        if (health == null || health.IsDead) return;
 
-        if (isWindingUp)
+        if (IsAttacking)
         {
-            windupTimer -= Time.deltaTime;
-            if (windupTimer <= 0f)
-            {
-                isWindingUp = false;
-                DealDamage(enemy, target);
-                cooldownTimer = cooldown;
-            }
+            AdvanceAttack(enemy, target);
             return;
         }
 
-        cooldownTimer -= Time.deltaTime;
-        if (cooldownTimer <= 0f)
-        {
-            isWindingUp = true;
-            windupTimer = windup;
-        }
+        cooldownTimer = Mathf.Max(0f, cooldownTimer - Time.deltaTime);
+        if (cooldownTimer <= 0f && IsInRange(enemy, target))
+            BeginAttack();
     }
 
-    private void DealDamage(EnemyBase enemy, Transform target)
+    private void BeginAttack()
     {
-        // 打玩家
-        PlayerHealth ph = target.GetComponent<PlayerHealth>();
-        if (ph == null) return;
-
-        float finalDamage = damage;
-
-        // 背刺判定
-        if (IsBehind(target.position))
-        {
-            finalDamage *= backstabMultiplier;
-            Debug.Log($"[MeleeAttack] 背刺！{finalDamage} 点伤害");
-        }
-
-        ph.TakeDamage(finalDamage, transform.position);
+        IsAttacking = true;
+        attackElapsed = 0f;
+        actionApplied = false;
+        OnAttackStarted?.Invoke();
     }
 
-    private bool IsBehind(Vector2 attackerPos)
+    private void AdvanceAttack(EnemyBase enemy, Transform target)
     {
-        EnemyBase eb = GetComponent<EnemyBase>();
-        return eb != null && eb.IsBehind(attackerPos, backstabAngle);
+        attackElapsed += Time.deltaTime;
+
+        if (!actionApplied && attackElapsed >= ActionDelay)
+        {
+            actionApplied = true;
+            if (IsInRange(enemy, target))
+                DealDamage(target);
+        }
+
+        if (attackElapsed < AttackDuration) return;
+
+        IsAttacking = false;
+        cooldownTimer = cooldown;
+    }
+
+    private void DealDamage(Transform target)
+    {
+        if (target == null) return;
+
+        PlayerHealth playerHealth = target.GetComponent<PlayerHealth>();
+        if (playerHealth == null) return;
+
+        // Player backstabs are resolved by VisionComponent when entering battle.
+        // Arena enemies must not deal double damage merely because the player is behind them.
+        playerHealth.TakeDamage(damage, transform.position);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        float drawRange = range;
+        EnemyBase enemy = GetComponent<EnemyBase>();
+        if (!Application.isPlaying && enemy != null && enemy.Data != null)
+            drawRange = enemy.Data.attackRange;
+
+        Gizmos.color = new Color(1f, 0.25f, 0.15f, 0.75f);
+        Gizmos.DrawWireSphere(transform.position, drawRange);
     }
 }

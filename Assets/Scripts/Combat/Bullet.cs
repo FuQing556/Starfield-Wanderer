@@ -53,6 +53,16 @@ public class Bullet : MonoBehaviour
         transform.rotation = Quaternion.Euler(0, 0, angle);
     }
 
+    /// <summary>
+    /// Applies combat values supplied by an enemy's data template after this projectile is spawned.
+    /// </summary>
+    public void Configure(float newSpeed, float newMaxDistance, float newDamage)
+    {
+        speed = newSpeed;
+        maxDistance = newMaxDistance;
+        damage = newDamage;
+    }
+
     private void FixedUpdate()
     {
         // 用 MovePosition 移动，物理引擎才能正确检测 Trigger 碰撞

@@ -18,7 +18,7 @@ MonoBehaviour:
   gridWidth: 1
   gridHeight: 1
   type: 5
-  rarity: 2
+  rarity: 1
   visualVariant: {fileID: 0}
   skill: 0
   skillDescription: 

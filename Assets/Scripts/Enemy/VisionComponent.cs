@@ -11,6 +11,7 @@ public class VisionComponent : MonoBehaviour
     [SerializeField] private float range = 3.5f;
     [SerializeField] private float angle = 100f;
     [SerializeField] private LayerMask obstacleMask;
+    [SerializeField] private Transform visionOrigin; // 角色胸口/眼睛位置；不填时兼容旧 prefab，退回根物体。
 
     [Header("发现进度条")]
     [SerializeField] private float detectionTime = 3f;       // 读条多久满
@@ -35,6 +36,9 @@ public class VisionComponent : MonoBehaviour
 
     public bool IsPlayerVisible { get; private set; }
 
+    public event System.Action OnArenaWindupStarted;
+    public event System.Action OnArenaWindupCancelled;
+
     private Transform player;
     private SpriteRenderer spriteRenderer;
     private EnemyBase enemy;
@@ -48,11 +52,18 @@ public class VisionComponent : MonoBehaviour
     private bool isWindingUpForArena;
     private float arenaWindupTimer;
     private readonly List<VisionComponent> alertedAllies = new();
+    private readonly RaycastHit2D[] visionHits = new RaycastHit2D[32];
+    private WorldEngageMode worldEngageMode = WorldEngageMode.ChaseAndContact;
+    private int activeObstacleMask;
 
     private void Awake()
     {
         enemy = GetComponent<EnemyBase>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // 新敌人约定使用同名子物体；旧 prefab 不建这个点也不会报错。
+        if (visionOrigin == null)
+            visionOrigin = transform.Find("VisionOrigin");
 
         if (enemy != null && enemy.Data != null)
         {
@@ -64,7 +75,14 @@ public class VisionComponent : MonoBehaviour
             alertRadius    = enemy.Data.alertRadius;
             loseRange      = enemy.Data.loseRange;
             backstabAngle  = enemy.Data.backstabAngle;
+            worldEngageMode = enemy.Data.worldEngageMode;
         }
+
+        // Existing prefabs use Nothing. Default + Enemy currently contains scenery and
+        // harvestable blockers; enemy colliders are filtered in CheckVision.
+        activeObstacleMask = obstacleMask.value != 0
+            ? obstacleMask.value
+            : LayerMask.GetMask("Default", "Enemy");
     }
 
     private void Start()
@@ -119,10 +137,19 @@ public class VisionComponent : MonoBehaviour
             detectionProgress = 0f;
             graceTimer = 0f;
 
-            // 完全发现 → 先在世界追玩家。贴脸前摇结束后，才真正进入竞技场。
+            // 完全发现后先唤醒附近同伴；随后按敌人数据决定追击入战或立即入战。
             isAlerted = true;
             canStartArenaBattle = true;
             AlertNearby();
+
+            // 弓手等警戒怪：侦测条满立即开战，不需要跑到玩家脸上。
+            if (worldEngageMode == WorldEngageMode.ImmediateOnDetected)
+            {
+                StartArenaBattle();
+                return;
+            }
+
+            // 剑士等近战怪：保持原逻辑，先追击，贴脸前摇结束后再进入竞技场。
             enemy.State = EnemyState.Chase;
             Debug.Log($"[Vision] {name} 黄条满：开始追击，贴脸后进入竞技场");
         }
@@ -249,6 +276,7 @@ public class VisionComponent : MonoBehaviour
         {
             isWindingUpForArena = true;
             arenaWindupTimer = windup;
+            OnArenaWindupStarted?.Invoke();
             Debug.Log($"[Vision] {name} 贴脸前摇 {windup:F1}s，准备进入竞技场");
         }
 
@@ -260,8 +288,11 @@ public class VisionComponent : MonoBehaviour
     /// <summary>玩家跑出近战范围时取消前摇，下次贴脸重新开始。</summary>
     public void CancelArenaWindup()
     {
+        bool wasWindingUp = isWindingUpForArena;
         isWindingUpForArena = false;
         arenaWindupTimer = 0f;
+        if (wasWindingUp)
+            OnArenaWindupCancelled?.Invoke();
     }
 
     /// <summary>真正开战：主怪与被呼唤同伴一起冻结，并按同伴数量增加竞技场波次。</summary>
@@ -294,18 +325,38 @@ public class VisionComponent : MonoBehaviour
     {
         if (player == null) return false;
 
-        Vector2 toPlayer = player.position - transform.position;
+        Vector2 origin = GetVisionOriginPosition();
+        Vector2 toPlayer = (Vector2)player.position - origin;
         if (toPlayer.magnitude > range) return false;
 
         Vector2 forward = (spriteRenderer != null && spriteRenderer.flipX)
             ? Vector2.left : Vector2.right;
         if (Vector2.Angle(forward, toPlayer.normalized) > angle / 2f) return false;
 
-        Vector2 rayStart = (Vector2)transform.position + forward * 0.3f;
-        RaycastHit2D hit = Physics2D.Linecast(rayStart, player.position, obstacleMask);
-        if (hit.collider != null && !hit.collider.CompareTag("Player")) return false;
+        int hitCount = Physics2D.LinecastNonAlloc(
+            origin, player.position, visionHits, activeObstacleMask);
+        for (int i = 0; i < hitCount; i++)
+        {
+            RaycastHit2D hit = visionHits[i];
+            Collider2D hitCollider = hit.collider;
+            if (hitCollider == null || hitCollider.isTrigger) continue;
+            if (hitCollider.CompareTag("Player")) continue;
+
+            // Enemies do not become moving sight walls for one another.
+            if (hitCollider.GetComponentInParent<EnemyBase>() != null) continue;
+
+            return false;
+        }
 
         return true;
+    }
+
+    /// <summary>
+    /// 视野专用起点。角色 Sprite 因透明留白而与根物体错位时，使用子物体修正即可。
+    /// </summary>
+    private Vector2 GetVisionOriginPosition()
+    {
+        return visionOrigin != null ? visionOrigin.position : transform.position;
     }
 
     private bool IsBehind(Vector2 attackerPos)
@@ -340,7 +391,7 @@ public class VisionComponent : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
-        Vector3 pos = transform.position;
+        Vector3 pos = GetVisionOriginPosition();
         Vector3 forward = (spriteRenderer != null && spriteRenderer.flipX)
             ? Vector3.left : Vector3.right;
         float half = angle / 2f;

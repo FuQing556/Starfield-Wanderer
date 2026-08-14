@@ -25,6 +25,10 @@ public class EnemyData : ScriptableObject
     public float detectionDrainMult = 2f;
     public float detectionGrace = 0.3f;
 
+    [Header("世界入战方式")]
+    // 剑士等近战怪：发现后追到攻击距离再入战；弓手等警戒怪：侦测条满立刻入战。
+    public WorldEngageMode worldEngageMode = WorldEngageMode.ChaseAndContact;
+
     [Header("追击")]
     public float chaseSpeed = 3f;
     public float loseRange = 5f;
@@ -35,7 +39,15 @@ public class EnemyData : ScriptableObject
     public float attackCooldown = 1.5f;
     public float attackDamage = 10f;
 
+    [Header("攻击动画时点")]
+    [Range(0f, 1f)] public float meleeHitNormalizedTime = 0.5f;
+    [Range(0f, 1f)] public float rangedReleaseNormalizedTime = 0.75f;
+    [Tooltip("大世界近战命中帧后，再等待多久进入竞技场。默认两帧（12 FPS）。")]
+    [Min(0f)] public float worldBattleDelayAfterHit = 2f / 12f;
+
     [Header("远程攻击")]
+    [Tooltip("小于等于 0 时，自动取视野距离与子弹最大距离中的较小值。")]
+    public float rangedAttackRange = -1f;
     public float shootInterval = 1.5f;
     public float bulletSpawnOffset = 0.8f;
     public float bulletSpeed = 8f;
@@ -48,4 +60,13 @@ public class EnemyData : ScriptableObject
 
     [Header("呼唤同伴")]
     public float alertRadius = 6f;
+}
+
+/// <summary>
+/// 世界敌人在侦测条满后，采用哪一种方式将玩家带入竞技场。
+/// </summary>
+public enum WorldEngageMode
+{
+    ChaseAndContact,
+    ImmediateOnDetected
 }

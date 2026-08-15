@@ -13,12 +13,14 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
     [SerializeField, Min(0f)] private float damage = 10f;
     [SerializeField, Range(0f, 1f)] private float hitNormalizedTime = 0.5f;
     [SerializeField, Min(0f)] private float worldBattleDelayAfterHit = 2f / 12f;
+    [SerializeField] private Transform attackOrigin; // 近战判定中心（剑身前）。没拖就自动找子物体 "AttackOrigin"
 
     private float attackElapsed;
     private float cooldownTimer;
     private bool actionApplied;
     private HealthComponent health;
     private EnemySpriteAnimator spriteAnimator;
+    private SpriteRenderer spriteRenderer;
 
     public event Action OnAttackStarted;
 
@@ -35,6 +37,11 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
     {
         health = GetComponent<HealthComponent>();
         spriteAnimator = GetComponent<EnemySpriteAnimator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // 和弓手的 AttackOrigin 一样：没拖就自动找子物体 "AttackOrigin"（剑身前的位置）
+        if (attackOrigin == null)
+            attackOrigin = transform.Find("AttackOrigin");
 
         EnemyBase enemy = GetComponent<EnemyBase>();
         if (enemy != null && enemy.Data != null)
@@ -51,7 +58,21 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
     public bool IsInRange(EnemyBase enemy, Transform target)
     {
         if (enemy == null || target == null) return false;
-        return Vector2.Distance(enemy.transform.position, target.position) <= range;
+        // 用攻击中心（剑身前）判断，而不是根节点（脚底），修复"攻击范围在脚底"的问题
+        return Vector2.Distance(GetAttackCenter(), target.position) <= range;
+    }
+
+    /// <summary>近战判定中心：AttackOrigin 的位置，朝左（flipX）时镜像局部 X，始终在面朝方向。</summary>
+    private Vector3 GetAttackCenter()
+    {
+        if (attackOrigin == null)
+            return transform.position;
+
+        Vector3 localPosition = transform.InverseTransformPoint(attackOrigin.position);
+        if (spriteRenderer != null && spriteRenderer.flipX)
+            localPosition.x = -localPosition.x;
+
+        return transform.TransformPoint(localPosition);
     }
 
     public void Tick(EnemyBase enemy, Transform target)
@@ -103,7 +124,7 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
 
         // Player backstabs are resolved by VisionComponent when entering battle.
         // Arena enemies must not deal double damage merely because the player is behind them.
-        playerHealth.TakeDamage(damage, transform.position);
+        playerHealth.TakeDamage(damage, GetAttackCenter());
     }
 
     private void OnDrawGizmosSelected()
@@ -114,6 +135,13 @@ public class MeleeAttack : MonoBehaviour, IAttackBehaviour
             drawRange = enemy.Data.attackRange;
 
         Gizmos.color = new Color(1f, 0.25f, 0.15f, 0.75f);
-        Gizmos.DrawWireSphere(transform.position, drawRange);
+        Gizmos.DrawWireSphere(GetAttackCenter(), drawRange);
+
+        // 画一个青色小点，标出攻击中心（AttackOrigin）在哪，方便摆位置
+        if (attackOrigin != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(GetAttackCenter(), 0.08f);
+        }
     }
 }

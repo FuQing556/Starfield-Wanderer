@@ -12,6 +12,7 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
     [SerializeField] private float radius = 4f;
     [SerializeField] private float waitMin = 2f;
     [SerializeField] private float waitMax = 5f;
+    [SerializeField] private float stuckTime = 1f; // 被障碍挡住多久就放弃当前目标（秒）
 
     private Vector2 spawnPoint;
     private Vector2 targetPoint;
@@ -20,9 +21,13 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
     private Rigidbody2D rb;
     private bool initialized;
 
+    private Vector2 lastPosition; // 上一帧位置，算这一帧实际走了多远
+    private float stuckTimer;     // 卡住累计时间（连续多久没怎么动）
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        lastPosition = transform.position; // 卡住检测基准
 
         EnemyBase eb = GetComponent<EnemyBase>();
         if (eb != null && eb.Data != null)
@@ -65,6 +70,8 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
         {
             rb.velocity = dir.normalized * speed;
             enemy.UpdateFacing(rb.velocity.x);
+
+            if (IsStuck()) PickNewTarget(); // 撞墙了，放弃这条路，重选方向
         }
     }
 
@@ -82,6 +89,32 @@ public class PatrolMovement : MonoBehaviour, IMovementBehaviour
 
         rb.velocity = dir.normalized * speed;
         enemy.UpdateFacing(rb.velocity.x);
+
+        // 回出生点的路上被障碍挡住，就放弃回点、切回巡逻（返回 true）
+        if (IsStuck())
+        {
+            rb.velocity = Vector2.zero;
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>检测是否卡住（连续 stuckTime 秒几乎没动）。返回 true 表示卡住了。</summary>
+    private bool IsStuck()
+    {
+        Vector2 moved = rb.position - lastPosition;
+        if (moved.sqrMagnitude < 0.0001f) // 位移 < 0.01，几乎没动
+            stuckTimer += Time.deltaTime;
+        else
+            stuckTimer = 0f;
+
+        lastPosition = rb.position;
+
+        if (stuckTimer >= stuckTime)
+        {
+            stuckTimer = 0f;
+            return true;
+        }
         return false;
     }
 

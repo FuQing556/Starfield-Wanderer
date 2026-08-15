@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1837613803769353051
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8711519928473294414}
+  m_Layer: 3
+  m_Name: AttackOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8711519928473294414
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1837613803769353051}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.24, y: 0.825, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5256812680016513577}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3013742038447661079
 GameObject:
   m_ObjectHideFlags: 0
@@ -43,6 +74,7 @@ Transform:
   m_Children:
   - {fileID: 1594803508256899151}
   - {fileID: 4204684156901002}
+  - {fileID: 8711519928473294414}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &7311759479423289121
@@ -255,11 +287,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   range: 1.5
-  windup: 0.4
+  fallbackWindup: 0.4
   cooldown: 1.5
   damage: 10
-  backstabAngle: 60
-  backstabMultiplier: 2
+  hitNormalizedTime: 0.5
+  worldBattleDelayAfterHit: 0.16666667
+  attackOrigin: {fileID: 8711519928473294414}
 --- !u!114 &7629094023404603933
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -311,10 +344,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 067f726a9776173409ab30b3d141ef6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  idleState: Warrior_Idle
-  walkState: Warrior_Walk
-  attackState: Warrior_Attack
-  attackDuration: 0.5
   walkSpeedThreshold: 0.01
 --- !u!1 &3673172329149267481
 GameObject:

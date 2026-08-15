@@ -21,3 +21,6 @@ Thumbs.db
 
 # Memory
 [Mm]emory/
+
+# 诊断日志（不提交）
+test_logs/

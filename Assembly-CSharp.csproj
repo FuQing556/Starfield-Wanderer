@@ -71,8 +71,8 @@
     <Compile Include="Assets\Scripts\Visual\VisualVariantProfile.cs" />
     <Compile Include="Assets\Scripts\World\Chest.cs" />
     <Compile Include="Assets\Scripts\UI\EquipmentSlotUI.cs" />
-    <Compile Include="Assets\Scripts\World\GatherableObject.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBuffController.cs" />
+    <Compile Include="Assets\Scripts\World\GatherableObject.cs" />
     <Compile Include="Assets\Scripts\UI\VirtualJoystick.cs" />
     <Compile Include="Assets\Scripts\UI\ShopPanel.cs" />
     <Compile Include="Assets\Scripts\Data\NPCData.cs" />
@@ -107,6 +107,7 @@
     <Compile Include="Assets\Scripts\Data\EnemyData.cs" />
     <Compile Include="Assets\Scripts\Player\DeathShadowEffect.cs" />
     <Compile Include="Assets\Scripts\Enemy\DetectionBar.cs" />
+    <Compile Include="Assets\Scripts\World\NPCPatrol.cs" />
     <Compile Include="Assets\Scripts\Core\GameInitializer.cs" />
     <Compile Include="Assets\Scripts\UI\SkillBarUI.cs" />
     <Compile Include="Assets\Scripts\Combat\IDamageable.cs" />
